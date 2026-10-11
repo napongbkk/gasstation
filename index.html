@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b1f26">
+<title>ระบบจัดการปั๊มน้ำมัน</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e6a11a' stroke-width='2'%3E%3Crect x='3' y='3' width='11' height='18' rx='1.5'/%3E%3Cpath d='M14 9h2.5a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 0 3 0V8l-3-3'/%3E%3C/svg%3E">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: forecourt price-sign header, tab strip, one working surface per task. Sodium-lamp amber on asphalt greys. */
+:root{
+  --bg:#eef0f3; --surface:#ffffff; --surface-2:#f6f7f9; --ink:#15181d; --muted:#5b6370; --line:#d8dce3;
+  --accent:#e6a11a; --accent-ink:#8a5800; --accent-soft:#fdf1d8; --sign:#1b1f26; --sign-ink:#f3c14b;
+  --good:#23845a; --good-soft:#e2f3ea; --warn:#b5710a; --warn-soft:#fbefd9; --bad:#c03f33; --bad-soft:#fbe5e2;
+  --bar-rev:#8d97a8;
+  --f-amber:#e6a11a; --f-blue:#2f6fd0; --f-green:#2e9a5e; --f-red:#d2483b; --f-violet:#7b54c9; --f-slate:#5f6b7c;
+  --display:"Barlow Condensed","IBM Plex Sans Thai","Arial Narrow",Tahoma,sans-serif;
+  --body:"IBM Plex Sans Thai",Tahoma,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#1a1d23; --surface-2:#20242b; --ink:#eceef2; --muted:#9aa1ad; --line:#2d323b;
+  --accent:#f0b23a; --accent-ink:#f3c062; --accent-soft:#3a2e15; --sign:#0b0d10; --sign-ink:#f3c14b;
+  --good:#4cc08a; --good-soft:#163024; --warn:#e8a542; --warn-soft:#352812; --bad:#ec6b5e; --bad-soft:#3a1c19;
+  --bar-rev:#6b7484;
+  --f-amber:#f0b23a; --f-blue:#5b93ec; --f-green:#4cbf7f; --f-red:#ec6b5e; --f-violet:#a183e6; --f-slate:#8794a6;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#1a1d23; --surface-2:#20242b; --ink:#eceef2; --muted:#9aa1ad; --line:#2d323b;
+  --accent:#f0b23a; --accent-ink:#f3c062; --accent-soft:#3a2e15; --sign:#0b0d10; --sign-ink:#f3c14b;
+  --good:#4cc08a; --good-soft:#163024; --warn:#e8a542; --warn-soft:#352812; --bad:#ec6b5e; --bad-soft:#3a1c19;
+  --bar-rev:#6b7484;
+  --f-amber:#f0b23a; --f-blue:#5b93ec; --f-green:#4cbf7f; --f-red:#ec6b5e; --f-violet:#a183e6; --f-slate:#8794a6;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;line-height:1.25}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* Header = price sign */
+.sign{background:var(--sign);color:#e9ebef;margin-inline:-16px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+.sign .brand{display:flex;flex-direction:column;min-width:0}
+.sign .eyebrow{font-size:12px;color:#9aa1ad}
+.sign h1{font-size:26px;color:#fff}
+.prices{display:flex;flex-wrap:wrap;gap:6px}
+.price{background:#000;border:1px solid #2b3038;border-radius:4px;padding:4px 10px 3px;display:flex;flex-direction:column;align-items:flex-end;min-width:96px}
+.price .p-name{font-size:11px;color:#aab0bb;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.price .p-val{font-family:"Barlow Condensed",var(--display);font-size:24px;line-height:1;color:var(--sign-ink);font-weight:600;font-variant-numeric:tabular-nums}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.sign-tools{display:flex;gap:8px;align-items:center}
+.btn-sign{background:transparent;border:1px solid #3a404a;color:#d6d9df;border-radius:6px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+.btn-sign:hover{border-color:#6a717d}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;margin:18px 0 20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px 9px;font:600 15px var(--body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab .k{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:6px;opacity:.7}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--ink)}
+
+/* Common */
+.sec-head{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:space-between;margin:6px 0 12px}
+.sec-head h2{font-size:24px}
+.sec-head p{margin:2px 0 0;color:var(--muted);max-width:66ch}
+.btn{font:500 14px var(--body);border-radius:6px;padding:7px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1b1404;font-weight:600}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.small{padding:3px 10px;font-size:13px}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.danger-solid{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:600}
+.pin-in{font-family:var(--mono);font-size:20px!important;letter-spacing:.4em;text-align:center}
+.btn.danger.arm{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,select:focus-visible,.btn-sign:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.neutral{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.muted{color:var(--muted)}
+.empty{padding:28px 20px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+.banner{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;margin:16px 0 0;color:var(--ink)}
+.banner.local{background:var(--surface-2);border-color:var(--line)}
+
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 9px;min-width:0}
+input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+td.mono{font-size:13px}
+tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0;background:var(--surface-2)}
+.row-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.fuel{display:inline-flex;align-items:center;gap:7px;font-weight:500;white-space:nowrap}
+
+/* Tanks */
+.tank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.tank{padding:16px;display:grid;grid-template-columns:70px 1fr;gap:16px}
+.tank-top{grid-column:1/-1;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tank-top h3{font-size:22px}
+.tank-top .sub{font-size:12px;color:var(--muted)}
+.gauge{position:relative;height:160px;border:2px solid var(--line);border-radius:14px 14px 10px 10px;background:var(--surface-2);overflow:hidden}
+.gauge .fill{position:absolute;left:0;right:0;bottom:0;opacity:.9;transition:height .4s ease}
+.gauge .low-line{position:absolute;left:0;right:0;border-top:2px dashed var(--bad);opacity:.7}
+.gauge .pct{position:absolute;inset:auto 0 6px 0;text-align:center;font:700 20px "Barlow Condensed",var(--display);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;align-content:start;min-width:0}
+.stat .l{font-size:12px;color:var(--muted)}
+.stat .v{font-family:"Barlow Condensed",var(--display);font-size:20px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat .v small{font-family:var(--body);font-size:12px;font-weight:400;color:var(--muted)}
+.stat.profit{grid-column:1/-1;background:var(--good-soft);border-radius:6px;padding:6px 10px;margin-top:2px}
+.stat.profit .l{color:var(--good);font-weight:600}
+.stat.profit .v{color:var(--good);font-size:24px}
+.stat.profit.neg{background:var(--bad-soft)}
+.stat.profit.neg .l,.stat.profit.neg .v{color:var(--bad)}
+.tank-actions{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+
+/* Pumps: modern dashboard cards — price as the hero number, ring = connected tank level */
+.pump-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.pump{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 14px;align-items:start}
+.pump-hd{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.pump-name{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;line-height:1.25;min-width:0}
+.pump-name .ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--fc);background:color-mix(in srgb,var(--fc) 14%,transparent)}
+.pump-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fuel-pill{flex:none;font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;color:var(--fc);background:color-mix(in srgb,var(--fc) 12%,transparent);white-space:nowrap}
+.pump-price .l{font-size:12px;color:var(--muted)}
+.pump-price .v{font:600 40px/1 "Barlow Condensed",var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-top:4px}
+.pump-price .v small{font:500 13px var(--body);color:var(--muted);margin-left:4px;letter-spacing:0}
+.ring{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:76px}
+.ring svg{display:block}
+.ring .rt{font-size:11px;color:var(--muted);max-width:90px;text-align:center;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pump-stats{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.pump-stats>div{background:var(--surface-2);padding:6px 10px;min-width:0;display:flex;align-items:baseline;justify-content:space-between;gap:6px;line-height:1.3}
+.pump-stats .l{font-size:13px;color:var(--muted);white-space:nowrap}
+.pump-stats .v{font-family:"Barlow Condensed",var(--display);font-variant-numeric:tabular-nums;font-size:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pump-stats .v small{font-family:var(--body);font-size:12px;font-weight:400;color:var(--muted);margin-left:2px}
+.pump-ft{grid-column:1/-1;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.pump-ft .dot{background:var(--good)}
+.pump-ft.none .dot{background:var(--muted)}
+.pump.unlinked{border-style:dashed}
+.pump-stats.one{grid-template-columns:1fr}
+.pump-price{min-width:0}
+.pump-price .v.meter-v{font:700 42px/1 "Barlow Condensed",var(--display);color:var(--ink);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-bottom:2px;border-bottom:3px solid var(--fc);display:inline-block;max-width:100%}
+
+/* Price board (first page): matches the pump cards — light tiles, fuel-coloured accents, price as hero number */
+.pboard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.pb-hd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+.pb-when{display:flex;flex-direction:column}
+.pb-l{font-size:13px;color:var(--muted)}
+.pb-d{font:700 24px/1.2 var(--display)}
+.pb-act{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.pb-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.pb-tile{position:relative;border-radius:12px;padding:14px 16px;background:color-mix(in srgb,var(--fc) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--fc) 30%,var(--line));display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.pb-tile::after{content:"";position:absolute;right:-28px;top:-28px;width:96px;height:96px;border-radius:50%;background:color-mix(in srgb,var(--fc) 10%,transparent)}
+.pb-top{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.pb-ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;background:var(--fc);flex:none}
+.pb-f{font-weight:700;font-size:17px}
+.pb-v{font:700 48px/1 "Barlow Condensed",var(--display);font-variant-numeric:tabular-nums;position:relative;z-index:1}
+.pb-v small{font:500 14px var(--body);color:var(--muted);margin-left:6px}
+.pb-dl{font-size:12px;font-weight:600;align-self:flex-start;border-radius:999px;padding:1px 9px;position:relative;z-index:1}
+.pb-dl.up{background:var(--bad-soft);color:var(--bad)}
+.pb-dl.down{background:var(--good-soft);color:var(--good)}
+.pb-dl.flat{background:var(--surface-2);color:var(--muted)}
+
+/* Fuel credit */
+.credit-layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.credit-layout{grid-template-columns:1fr}}
+.cust-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px;max-height:620px;overflow:auto}
+.cust-list button{width:100%;background:none;border:0;border-radius:8px;padding:10px 12px;font:inherit;color:var(--ink);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:5px;border-left:3px solid transparent}
+.cust-list button:hover{background:var(--surface-2)}
+.cust-list button.on{background:var(--accent-soft);border-left-color:var(--accent)}
+.cl-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;min-width:0}
+.cl-top strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-bal{font-weight:600;white-space:nowrap}
+.cl-bal.over{color:var(--bad)}
+.cl-bal.zero{color:var(--muted)}
+.cl-lim{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.cl-lim .sb{flex:1;height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.cl-lim .sb i{display:block;height:100%;background:var(--good)}
+.cl-lim .sb i.hi{background:var(--warn)}
+.cl-lim .sb i.over{background:var(--bad)}
+.cl-age{font-size:12px;color:var(--muted)}
+.cust-detail{min-width:0}
+.cd-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid var(--line)}
+.cd-head h3{font-size:24px}
+.cd-info{font-size:13px}
+.cd-bal{display:flex;flex-direction:column;align-items:flex-end}
+.cd-bal .l{font-size:12px;color:var(--muted)}
+.cd-bal .v{font:700 32px/1.1 "Barlow Condensed",var(--display);font-variant-numeric:tabular-nums}
+.cd-bal .v.owe{color:var(--bad)}
+.cd-act{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+
+/* Summary: cash vs credit */
+.credit-sum{margin-top:16px}
+.cs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.cs-grid>div{background:var(--surface);padding:12px 16px}
+.cs-grid .l{font-size:12px;color:var(--muted)}
+.cs-grid .v{font:600 26px/1.15 "Barlow Condensed",var(--display);font-variant-numeric:tabular-nums}
+.cs-grid .v.good{color:var(--good)}
+.cs-grid .v.bad{color:var(--bad)}
+.cs-grid .s{font-size:12px;color:var(--muted)}
+.cs-grid .cs-hi{background:var(--accent-soft)}
+.cs-bar{display:flex;height:12px;margin:14px 16px 6px;border-radius:6px;overflow:hidden;background:var(--surface-2)}
+.cs-bar i{display:block;height:100%}
+.cs-bar .cash,.cs-leg .cash{background:var(--good)}
+.cs-bar .cred,.cs-leg .cred{background:var(--warn)}
+.cs-leg{display:flex;gap:14px;font-size:12px;color:var(--muted);padding:0 16px 12px}
+.cs-leg span{display:inline-flex;align-items:center;gap:6px}
+.cs-leg i{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+/* Google Drive status */
+.gd-pill{display:inline-flex;align-items:center;gap:7px;max-width:100%}
+.gd-pill .gd-name{font-weight:600}
+.gd-pill .gd-t{color:#aab0bb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+@media (max-width:560px){.gd-pill .gd-name{display:none}}
+.gd-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;background:#8b93a0}
+.gd-dot.ok{background:#3fcf8e;box-shadow:0 0 0 3px rgba(63,207,142,.2)}
+.gd-dot.warn{background:#f0b23a}
+.gd-dot.busy{background:#f0b23a;animation:gdp 1s ease-in-out infinite}
+.gd-dot.bad{background:#ec6b5e}
+@keyframes gdp{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.gd-dot.busy{animation:none}}
+.gd-status{display:flex;align-items:center;gap:8px;font-size:15px;margin-top:4px}
+.gd-dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0;font-size:13px}
+.gd-dl dt{color:var(--muted)}
+.gd-dl dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.gd-dl a{color:var(--accent-ink)}
+.gd-auto{display:flex;align-items:center;gap:8px;font-size:14px;padding:10px 12px;background:var(--surface-2);border-radius:8px;flex-wrap:wrap}
+
+/* Arrange mode */
+.arr-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border:1px dashed var(--accent);border-radius:8px;padding:4px 6px;font-size:12px;color:var(--accent-ink)}
+.arr-bar .btn{padding:2px 12px}
+.arr-bar .btn:disabled{opacity:.35;cursor:default}
+.arranging{cursor:grab;outline:2px dashed var(--accent);outline-offset:2px}
+.arranging.dragging{opacity:.45}
+.arranging.drop-t{outline:3px solid var(--accent);background:var(--accent-soft)}
+
+/* Meter */
+.meter-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.meter-bar label{font-weight:600}
+.meter-bar .spacer{flex:1}
+.meter-in{width:120px;text-align:right}
+.price-in{width:88px;text-align:right}
+input:disabled{background:var(--surface-2);color:var(--ink);opacity:1;border-color:transparent;cursor:not-allowed}
+.price-in.override{border-color:var(--accent);background:var(--accent-soft)}
+.price-strip{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.price-strip .ps-l{font-weight:600;font-size:13px}
+.pchip{display:inline-flex;align-items:baseline;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:13px}
+.pchip .dot{align-self:center}
+.pchip b{font-size:15px}
+.pchip small{color:var(--muted);font-size:11px}
+td.calc{font-family:var(--mono);font-weight:500;text-align:right;white-space:nowrap}
+td.calc.err{color:var(--bad);font-family:var(--body)}
+.layout-2{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}
+@media (max-width:860px){.layout-2{grid-template-columns:1fr}}
+.daylist{list-style:none;margin:0;padding:6px}
+.daylist button{width:100%;display:flex;justify-content:space-between;gap:8px;background:none;border:0;border-radius:6px;padding:8px 10px;font:inherit;color:var(--ink);cursor:pointer;text-align:left}
+.daylist button:hover,.daylist button.on{background:var(--surface-2)}
+.daylist .d{font-weight:500}
+.daylist .x{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right}
+.panel-h{padding:12px 14px;border-bottom:1px solid var(--line);font:700 17px var(--display)}
+
+/* Summary */
+.range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:6px 12px;font:500 13px var(--body);color:var(--muted);cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{padding:14px 16px}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font:600 30px/1.15 "Barlow Condensed",var(--display);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
+.kpi.hero{background:var(--sign);border-color:var(--sign);color:#fff}
+.kpi.hero .l,.kpi.hero .s{color:#aab0bb}
+.kpi.hero .v{color:var(--sign-ink)}
+.chart-box{padding:12px 12px 6px}
+.chart-box svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);padding:0 4px 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:10px;border-radius:2px;display:inline-block}
+.grid-2{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:16px}
+.kpi.pl{background:var(--good-soft);border-color:var(--good)}
+.kpi.pl .l,.kpi.pl .v{color:var(--good)}
+.kpi.pl.neg{background:var(--bad-soft);border-color:var(--bad)}
+.kpi.pl.neg .l,.kpi.pl.neg .v{color:var(--bad)}
+td.plc{color:var(--good);font-weight:600}
+.share{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.share .sb{width:70px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;display:inline-block}
+.share .sb i{display:block;height:100%}
+td.plc.neg{color:var(--bad)}
+.foot-note{font-size:12px;color:var(--muted);margin-top:10px;max-width:76ch}
+
+/* Dialog */
+dialog{border:1px solid var(--line);border-radius:10px;padding:0;background:var(--surface);color:var(--ink);width:min(540px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(10,12,16,.5)}
+dialog form{padding:20px}
+dialog h2{font-size:24px;margin-bottom:6px}
+dialog .note{color:var(--muted);margin:0 0 12px;font-size:13px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid .full{grid-column:1/-1}
+.fgrid label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--muted);min-width:0}
+.fgrid label input,.fgrid label select{font-weight:400;font-size:14px;width:100%}
+.form-err{color:var(--bad);font-size:13px;margin:10px 0 0;min-height:1em}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+@media (max-width:480px){.fgrid{grid-template-columns:1fr}}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:6px;font-size:13px;z-index:50;max-width:calc(100vw - 32px)}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" lang="th">
+  <header class="sign">
+    <div class="brand"><span class="eyebrow">ระบบจัดการปั๊มน้ำมัน</span><h1 id="stName">ปั๊มน้ำมัน</h1></div>
+    <div class="sign-tools"><button class="btn-sign gd-pill" id="gdPill" type="button" aria-label="สถานะการสำรองข้อมูล Google Drive"></button><button class="btn-sign" id="btnSettings" type="button">ตั้งค่าสถานี</button></div>
+  </header>
+  <div id="banner"></div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-tab="tanks" id="tab-tanks"><span class="k">1</span>ถังน้ำมัน</button>
+    <button class="tab" role="tab" data-tab="meters" id="tab-meters"><span class="k">2</span>บันทึกเลขมิเตอร์</button>
+    <button class="tab" role="tab" data-tab="orders" id="tab-orders"><span class="k">3</span>สั่งซื้อน้ำมัน</button>
+    <button class="tab" role="tab" data-tab="credit" id="tab-credit"><span class="k">4</span>สินเชื่อน้ำมัน</button>
+    <button class="tab" role="tab" data-tab="summary" id="tab-summary"><span class="k">5</span>สรุปยอดขายและกำไร</button>
+    <button class="tab" role="tab" data-tab="manage" id="tab-manage"><span class="k">6</span>ตั้งค่าถังและหัวจ่าย</button>
+  </nav>
+  <main id="main"><div class="loading">กำลังโหลดข้อมูล…</div></main>
+</div>
+<dialog id="dlg" lang="th"></dialog>
+<div class="toast" id="toast" hidden></div>
+<script src="config.js"></script>
+<script>
+(function(){
+try{document.documentElement.lang='th';}catch(e){}
+const COLS=['tanks','nozzles','readings','orders','settings','dayprices','customers','credits'];
+const S={tanks:{},nozzles:{},readings:{},orders:{},settings:{},dayprices:{},customers:{},credits:{}};
+let db=null, mode='loading';
+const loaded=new Set();
+const SWATCH={amber:'ส้ม',blue:'น้ำเงิน',green:'เขียว',red:'แดง',violet:'ม่วง',slate:'เทา'};
+const FUELS=['ดีเซล B7','แก๊สโซฮอล์ 91'];
+const priceMap=()=>(S.settings.prices&&S.settings.prices.prices)||{};
+/* Daily selling price: the price set on a date applies from that date until a newer one is set. */
+function priceInfo(f,date){let best=null;
+  for(const x of Object.values(S.dayprices))if(x&&x.date<=date&&x.prices&&x.prices[f]!=null&&(!best||x.date>best.date))best=x;
+  if(best)return {p:+best.prices[f],from:best.date};
+  const m=priceMap();if(m[f]!=null)return {p:+m[f],from:null};
+  for(const t of Object.values(S.tanks))if(t.fuel===f&&t.sellPrice!=null)return {p:+t.sellPrice,from:null};
+  return {p:0,from:null};}
+const priceOn=(f,date)=>priceInfo(f,date).p;
+const priceOf=f=>priceOn(f,today());
+const fuelsUsed=()=>[...new Set([...Object.values(S.tanks).map(t=>t.fuel),...FUELS])];
+/* Saves the day's prices, then re-prices saved readings that were using the old carried price (manual overrides are left alone). */
+async function setDayPrices(date,changes){
+  const ex=S.dayprices[date];
+  await put('dayprices',date,{date,prices:{...((ex&&ex.prices)||{}),...changes}});
+  let n=0;for(const [k,r] of Object.entries(S.readings)){if(r.date<date)continue;const t=S.tanks[r.tankId];if(!t||changes[t.fuel]==null)continue;
+    const np=priceOn(t.fuel,r.date);
+    if(Math.abs(np-(+r.price||0))>0.00001){await put('readings',k,{...r,price:np,amount:Math.round((+r.litres||0)*np*100)/100});n++;}}
+  return n;}
+const COLNAME={tanks:'ถังน้ำมัน',nozzles:'หัวจ่าย',readings:'เลขมิเตอร์',orders:'ใบสั่งซื้อ',settings:'การตั้งค่า',dayprices:'ราคาขายรายวัน',customers:'ลูกค้าสินเชื่อ',credits:'รายการสินเชื่อ'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>ymd(new Date());
+const addDays=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return ymd(d)};
+const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const DOW=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+const fdate=s=>{if(!s)return '';const d=new Date(s+'T00:00:00');return d.getDate()+' '+MON[d.getMonth()]+' '+(d.getFullYear()+543)};
+const fdateShort=s=>{const d=new Date(s+'T00:00:00');return DOW[d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()]};
+const cur=()=> (S.settings.main&&S.settings.main.currency)||'฿';
+const nL=n=>(Math.round((+n||0)*100)/100).toLocaleString('en-US',{maximumFractionDigits:2});
+const L=n=>Math.round(+n||0).toLocaleString('en-US');
+const M=n=>cur()+' '+(+n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const M0=n=>cur()+' '+Math.round(+n||0).toLocaleString('en-US');
+const color=k=>'var(--f-'+(SWATCH[k]?k:'slate')+')';
+
+/* ---------- storage ---------- */
+function loadLocal(){try{const raw=localStorage.getItem('gsm-data');if(raw){const o=JSON.parse(raw);COLS.forEach(c=>S[c]=o[c]||{});}}catch(e){}}
+function saveLocal(){try{localStorage.setItem('gsm-data',JSON.stringify(S));}catch(e){}}
+function errMsg(e){if(!e)return 'เกิดข้อผิดพลาด';if(e.code==='quota_exceeded')return 'พื้นที่จัดเก็บเต็ม กรุณาลบข้อมูลเก่าบางส่วนแล้วลองใหม่';if(e.code==='invalid_argument')return 'คุณดูข้อมูลได้ แต่ไม่มีสิทธิ์แก้ไข';return 'บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่';}
+async function put(c,id,data){S[c]={...S[c],[id]:data};render();try{if(db)await db.collection(c).doc(id).set(data);else{saveLocal();trackChange(c,id,data);}}catch(e){toast(errMsg(e));}}
+async function del(c,id){const n={...S[c]};delete n[id];S[c]=n;render();try{if(db)await db.collection(c).doc(id).delete();else{saveLocal();trackChange(c,id,null);}}catch(e){toast(errMsg(e));}}
+
+/* ---------- Standalone (Vercel): Google Drive is the data store ----------
+   Data lives in one JSON file "gas-station-data.json" inside the Drive folder "Gas Station Manager".
+   Every save downloads the current file, applies only the records changed on this device, then uploads,
+   so two devices editing different records don't overwrite each other. A dated copy is kept once a day. */
+const CFG=window.GSM_CONFIG||{};
+const DV={token:null,exp:0,fileId:null,folderId:null,modified:null,state:'signedout',saving:false,lastSaved:null,err:'',client:null,changes:{},timer:null};
+const DRIVE_FILE='gas-station-data.json',DRIVE_FOLDER='Gas Station Manager';
+const SEP='\u0001';
+function savePending(){try{localStorage.setItem('gsm-pending',JSON.stringify(DV.changes));}catch(e){}}
+function trackChange(c,id,data){if(mode!=='drive')return;DV.changes[c+SEP+id]=data===undefined?null:data;savePending();scheduleSave();}
+function scheduleSave(){clearTimeout(DV.timer);DV.timer=setTimeout(()=>{if(DV.token&&DV.fileId)driveSave();else{DV.state=DV.state==='signedout'?'signedout':'reauth';renderHeader();}},1200);}
+function loadGis(){return new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();
+  const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>res();s.onerror=()=>rej(new Error('โหลดระบบลงชื่อเข้าใช้ Google ไม่สำเร็จ'));document.head.appendChild(s);});}
+async function driveSignIn(){await loadGis();return new Promise((res,rej)=>{
+  DV.client=google.accounts.oauth2.initTokenClient({client_id:CFG.googleClientId,scope:'https://www.googleapis.com/auth/drive.file',
+    callback:r=>{if(r.error)return rej(new Error(r.error_description||r.error));DV.token=r.access_token;DV.exp=Date.now()+((+r.expires_in||3600)-60)*1000;try{localStorage.setItem('gsm-drive-ok','1');}catch(_){}res();},
+    error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'หน้าต่างลงชื่อเข้าใช้ถูกปิดก่อนเสร็จ':e&&e.type==='popup_failed_to_open'?'เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป กรุณาอนุญาตป๊อปอัปแล้วลองใหม่':'ลงชื่อเข้าใช้ไม่สำเร็จ'))});
+  DV.client.requestAccessToken({prompt:''});});}
+async function gapi(path,opt={}){
+  if(!DV.token||Date.now()>DV.exp){DV.token=null;DV.state='reauth';renderHeader();throw new Error('reauth');}
+  const r=await fetch('https://www.googleapis.com/'+path,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+DV.token}});
+  if(r.status===401){DV.token=null;DV.state='reauth';renderHeader();throw new Error('reauth');}
+  if(!r.ok){let m='';try{m=(await r.json()).error.message;}catch(_){}throw new Error(m||('Google Drive ตอบกลับ '+r.status));}
+  return r;}
+const q=s=>encodeURIComponent(s);
+async function driveLocate(){
+  let j=await (await gapi(`drive/v3/files?q=${q(`name='${DRIVE_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`)}&fields=files(id)&spaces=drive`)).json();
+  DV.folderId=j.files&&j.files[0]?j.files[0].id:(await (await gapi('drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json()).id;
+  j=await (await gapi(`drive/v3/files?q=${q(`name='${DRIVE_FILE}' and '${DV.folderId}' in parents and trashed=false`)}&fields=files(id,modifiedTime)&spaces=drive`)).json();
+  if(j.files&&j.files[0]){DV.fileId=j.files[0].id;DV.modified=j.files[0].modifiedTime;return true;}return false;}
+const allData=()=>Object.fromEntries(COLS.map(c=>[c,S[c]]));
+const fileBody=data=>JSON.stringify({app:'gas-station-manager',format:1,savedAt:new Date().toISOString(),data});
+async function driveRead(){const o=await (await gapi(`drive/v3/files/${DV.fileId}?alt=media`)).json();return o&&o.data?o.data:(o||{});}
+async function driveWrite(data){const j=await (await gapi(`upload/drive/v3/files/${DV.fileId}?uploadType=media&fields=modifiedTime`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:fileBody(data)})).json();DV.modified=j.modifiedTime;DV.lastSaved=new Date();}
+async function driveCreate(){const b='gsm'+Date.now(),meta={name:DRIVE_FILE,parents:[DV.folderId],mimeType:'application/json'};
+  const body=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${fileBody(allData())}\r\n--${b}--`;
+  const j=await (await gapi('upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body})).json();
+  DV.fileId=j.id;DV.modified=j.modifiedTime;DV.lastSaved=new Date();}
+function applyData(data){COLS.forEach(c=>S[c]=data[c]||{});saveLocal();}
+async function driveSave(){if(DV.saving||!DV.fileId)return;const ch=DV.changes;if(!Object.keys(ch).length)return;
+  DV.saving=true;DV.changes={};DV.state='saving';renderHeader();
+  try{const data=await driveRead();
+    for(const [k,v] of Object.entries(ch)){const [c,id]=k.split(SEP);data[c]=data[c]||{};if(v===null)delete data[c][id];else data[c][id]=v;}
+    await driveWrite(data);applyData(data);savePending();DV.state='saved';DV.err='';render();driveDailyCopy();}
+  catch(e){DV.changes={...ch,...DV.changes};savePending();if(e.message!=='reauth'){DV.state='error';DV.err=e.message;}}
+  finally{DV.saving=false;renderHeader();if(Object.keys(DV.changes).length&&DV.state==='saved')scheduleSave();}}
+async function driveRefresh(){/* pull other devices' changes when nothing is waiting to be saved here */
+  if(mode!=='drive'||!DV.token||!DV.fileId||DV.saving||Object.keys(DV.changes).length||Date.now()>DV.exp)return;
+  try{const m=await (await gapi(`drive/v3/files/${DV.fileId}?fields=modifiedTime`)).json();
+    if(m.modifiedTime!==DV.modified){applyData(await driveRead());DV.modified=m.modifiedTime;render();}}catch(e){}}
+async function driveDailyCopy(){const td=today();let last='';try{last=localStorage.getItem('gsm-last-copy')||'';}catch(_){}
+  if(last===td||!DV.fileId)return;
+  try{await gapi(`drive/v3/files/${DV.fileId}/copy?fields=id`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:`สำรองข้อมูลปั๊ม ${td}.json`,parents:[DV.folderId]})});
+    try{localStorage.setItem('gsm-last-copy',td);}catch(_){}}catch(e){}}
+async function driveConnect(){if(!CFG.googleClientId){toast('ยังไม่ได้ตั้งค่า Google Client ID ในไฟล์ config.js');return;}
+  try{DV.state='connecting';renderHeader();await driveSignIn();
+    if(await driveLocate()){applyData(await driveRead());if(Object.keys(DV.changes).length){DV.state='saved';await driveSave();}}
+    else await driveCreate();
+    DV.state='saved';DV.lastSaved=DV.lastSaved||new Date(DV.modified);DV.err='';render();driveDailyCopy();toast('เชื่อมต่อ Google Drive แล้ว');}
+  catch(e){if(e.message!=='reauth'){DV.state='error';DV.err=e.message;}renderHeader();toast('เชื่อมต่อ Google Drive ไม่สำเร็จ: '+e.message);}}
+async function driveReplaceAll(data){applyData(data);DV.changes={};savePending();render();
+  if(DV.token&&DV.fileId){DV.state='saving';renderHeader();try{await driveWrite(allData());DV.state='saved';toast('นำเข้าข้อมูลและบันทึกลง Google Drive แล้ว');}catch(e){if(e.message!=='reauth'){DV.state='error';DV.err=e.message;}}renderHeader();}
+  else toast('นำเข้าข้อมูลแล้ว จะบันทึกลง Google Drive เมื่อเชื่อมต่อ');}
+function driveBoot(){mode='drive';loadLocal();try{DV.changes=JSON.parse(localStorage.getItem('gsm-pending')||'{}')||{};}catch(_){DV.changes={};}
+  let seen=false;try{seen=!!localStorage.getItem('gsm-drive-ok');}catch(_){}
+  DV.state=seen?'reauth':'signedout';COLS.forEach(c=>loaded.add(c));render();
+  setInterval(driveRefresh,60000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')driveRefresh();});}
+function driveLabel(){const n=Object.keys(DV.changes).length;
+  return ({signedout:{c:'bad',t:'ยังไม่ได้เชื่อมต่อ'},reauth:{c:'warn',t:n?`มี ${n} รายการรอบันทึก · กดเพื่อเชื่อมต่อ`:'กดเพื่อเชื่อมต่อ'},
+    connecting:{c:'busy',t:'กำลังเชื่อมต่อ…'},saving:{c:'busy',t:'กำลังบันทึก…'},
+    saved:{c:'ok',t:n?'มีข้อมูลรอบันทึก':DV.lastSaved?'บันทึกแล้ว '+pad(DV.lastSaved.getHours())+':'+pad(DV.lastSaved.getMinutes())+' น.':'เชื่อมต่อแล้ว'},
+    error:{c:'bad',t:'บันทึกไม่สำเร็จ'}})[DV.state]||{c:'off',t:''};}
+function openDrivePanel(){const dlg=$('#dlg'),lb=driveLabel(),n=Object.keys(DV.changes).length;
+  dlg.innerHTML=`<div style="padding:20px"><h2>ข้อมูลใน Google Drive</h2>
+    <div class="gd-status"><span class="gd-dot ${lb.c}"></span><strong>${esc(lb.t)}</strong></div>
+    ${DV.err&&DV.state==='error'?`<p class="note" style="margin-top:8px;color:var(--bad)">${esc(DV.err)}</p>`:''}
+    ${!CFG.googleClientId?'<p class="note" style="margin-top:8px;color:var(--bad)">ยังไม่ได้ใส่ Google Client ID ในไฟล์ config.js (ดูวิธีใน README)</p>':''}
+    <dl class="gd-dl">
+      <dt>ที่เก็บข้อมูล</dt><dd>${DV.folderId?`<a href="https://drive.google.com/drive/folders/${esc(DV.folderId)}" target="_blank" rel="noopener">โฟลเดอร์ ${esc(DRIVE_FOLDER)}</a>`:esc(DRIVE_FOLDER)} · ไฟล์ ${esc(DRIVE_FILE)}</dd>
+      <dt>บันทึกล่าสุด</dt><dd>${DV.lastSaved?esc(fdate(ymd(DV.lastSaved)))+' '+pad(DV.lastSaved.getHours())+':'+pad(DV.lastSaved.getMinutes())+' น.':'–'}</dd>
+      <dt>รอบันทึก</dt><dd>${n?n+' รายการ (เก็บไว้ในเครื่องนี้จนกว่าจะบันทึกสำเร็จ)':'ไม่มี'}</dd>
+      <dt>สำรองรายวัน</dt><dd>ทุกวันระบบจะคัดลอกไฟล์ข้อมูลไว้ 1 ชุดในโฟลเดอร์เดียวกัน</dd>
+    </dl>
+    <label class="gd-auto" for="dvImport">นำเข้าไฟล์สำรอง (.json) แทนข้อมูลทั้งหมด <input type="file" id="dvImport" accept=".json,application/json"></label>
+    <div class="dlg-actions"><button type="button" class="btn ghost" id="dvClose">ปิด</button>
+      ${DV.token?`<button type="button" class="btn" id="dvReload">โหลดข้อมูลล่าสุด</button><button type="button" class="btn primary" id="dvSave"${n?'':' disabled'}>บันทึกตอนนี้</button>`:`<button type="button" class="btn primary" id="dvConn">เชื่อมต่อ Google Drive</button>`}</div></div>`;
+  $('#dvClose').onclick=()=>dlg.close();
+  if($('#dvConn'))$('#dvConn').onclick=()=>{dlg.close();driveConnect();};
+  if($('#dvSave'))$('#dvSave').onclick=()=>{dlg.close();driveSave();};
+  if($('#dvReload'))$('#dvReload').onclick=()=>{dlg.close();if(Object.keys(DV.changes).length){toast('มีข้อมูลรอบันทึก กรุณาบันทึกก่อน');return;}DV.modified=null;driveRefresh().then(()=>toast('โหลดข้อมูลล่าสุดแล้ว'));};
+  $('#dvImport').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();
+    rd.onload=()=>{let o;try{o=JSON.parse(rd.result);}catch(_){toast('ไฟล์ไม่ใช่ข้อมูลสำรองที่ถูกต้อง');return;}const data=o&&o.data?o.data:o;
+      if(!data||typeof data!=='object'||!data.tanks){toast('ไฟล์นี้ไม่มีข้อมูลถังน้ำมัน ไม่ใช่ไฟล์สำรองของแอปนี้');return;}
+      pinGate('นำเข้าข้อมูลจากไฟล์สำรอง','แทนที่ข้อมูลทั้งหมด',()=>driveReplaceAll(data));};rd.readAsText(f);};
+  dlg.showModal();}
+(async()=>{
+  let d=null;
+  try{d=window.claude&&window.claude.use?await window.claude.use('db'):null;}catch(e){d=null;}
+  if(d){db=d;mode='db';
+    COLS.forEach(c=>{db.collection(c).onSnapshot(snap=>{const o={};snap.docs.forEach(x=>{o[x.id]=x.data();});S[c]=o;loaded.add(c);render();},err=>{loaded.add(c);toast('โหลดข้อมูล'+COLNAME[c]+'ไม่สำเร็จ กรุณาโหลดหน้าใหม่');render();});});
+  }else setTimeout(driveBoot,0);
+})();
+
+/* ---------- toast ---------- */
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,3200);}
+
+/* ---------- domain ---------- */
+const ordOf=x=>(x&&x.order!=null)?+x.order:1e9;
+const tanksSorted=()=>Object.entries(S.tanks).sort((a,b)=>(ordOf(a[1])-ordOf(b[1]))||String(a[1].name).localeCompare(String(b[1].name),'th',{numeric:true}));
+const nozzlesSorted=()=>Object.entries(S.nozzles).sort((a,b)=>{if(ordOf(a[1])!==ordOf(b[1]))return ordOf(a[1])-ordOf(b[1]);const ta=S.tanks[a[1].tankId],tb=S.tanks[b[1].tankId];return String(ta?ta.name:'').localeCompare(String(tb?tb.name:''),'th',{numeric:true})||String(a[1].name).localeCompare(String(b[1].name),'th',{numeric:true});});
+const delivDate=o=>o.deliveryDate||o.date;
+function tankLevel(id){const t=S.tanks[id];if(!t)return 0;let lvl=+t.baseLevel||0;const bd=t.baseDate||'0000-00-00';
+  for(const o of Object.values(S.orders))if(o.tankId===id&&o.status==='received'&&delivDate(o)>bd)lvl+=+o.litres||0;
+  for(const r of Object.values(S.readings))if(r.tankId===id&&r.date>bd)lvl-=+r.litres||0;
+  return lvl;}
+function avgCost(tankId,date){let q=0,v=0;for(const o of Object.values(S.orders)){if(o.tankId===tankId&&o.status==='received'&&delivDate(o)<=date){q+=+o.litres||0;v+=(+o.litres||0)*(+o.costPerLitre||0);}}
+  if(q>0)return v/q;
+  let first=null;for(const o of Object.values(S.orders))if(o.tankId===tankId&&o.status==='received'&&(!first||delivDate(o)<delivDate(first)))first=o;
+  if(first)return +first.costPerLitre||0;const t=S.tanks[tankId];return t?(+t.refCost||0):0;}
+function dailyAvg(tankId){const dates=[...new Set(Object.values(S.readings).map(r=>r.date))].sort();if(!dates.length)return 0;const last=dates[dates.length-1];const from=addDays(last,-6);
+  const days=new Set();let sum=0;for(const r of Object.values(S.readings))if(r.date>=from&&r.date<=last){days.add(r.date);if(r.tankId===tankId)sum+=+r.litres||0;}
+  return days.size?sum/days.size:0;}
+function lastReading(nid,before){let best=null;for(const r of Object.values(S.readings))if(r.nozzleId===nid&&(!before||r.date<before)&&(!best||r.date>best.date))best=r;return best;}
+const hasSample=()=>COLS.some(c=>Object.values(S[c]).some(x=>x&&x.sample));
+
+/* ---------- tabs ---------- */
+let tab=(location.hash||'').slice(1);if(!['tanks','meters','orders','summary','credit','manage'].includes(tab))tab='tanks';
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=b.dataset.tab;try{history.replaceState(null,'','#'+tab);}catch(_){}render(true);});
+
+/* ---------- render ---------- */
+let pending=false,autoKick=false;
+document.addEventListener('focusout',()=>{if(pending)setTimeout(()=>{if(pending&&!isTyping()){pending=false;render();}},0);});
+function isTyping(){const a=document.activeElement;return a&&$('#main').contains(a)&&a.matches('input,select');}
+function render(force){
+  renderHeader();
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
+  if(!force&&isTyping()){pending=true;return;}
+  pending=false;
+  const main=$('#main');
+  if(COLS.some(c=>!loaded.has(c))){main.innerHTML='<div class="loading">กำลังโหลดข้อมูล…</div>';return;}
+  if(!autoKick){autoKick=true;setTimeout(()=>{if(typeof maybeAuto==='function')maybeAuto();},1500);}
+  if(tab==='tanks')renderTanks(main);else if(tab==='meters')renderMeters(main);else if(tab==='orders')renderOrders(main);else if(tab==='manage')renderManage(main);else if(tab==='credit')renderCredit(main);else renderSummary(main);
+}
+function renderHeader(){
+  const gp=$('#gdPill');if(gp&&typeof gdLabel==='function'){const lb=mode==='drive'?driveLabel():gdLabel();gp.innerHTML=`<span class="gd-dot ${lb.c}"></span><span class="gd-name">Google Drive</span><span class="gd-t">${esc(lb.t)}</span>`;}
+  const st=S.settings.main||{};$('#stName').textContent=st.name||'ปั๊มน้ำมันของฉัน';
+  let b='';
+  if(hasSample())b=`<div class="banner"><span><strong>ข้อมูลตัวอย่าง</strong> ถัง เลขมิเตอร์ และใบสั่งซื้อที่เห็นอยู่เป็นตัวอย่างเพื่อให้ลองใช้งาน เมื่อพร้อมกรอกข้อมูลจริง ให้กดล้างข้อมูลตัวอย่าง</span><button class="btn small danger" id="clearSample" type="button">ล้างข้อมูลตัวอย่าง</button></div>`;
+  else if(mode==='drive'&&!DV.token)b=`<div class="banner"><span><strong>${DV.state==='signedout'?'เชื่อมต่อ Google Drive เพื่อเริ่มใช้งาน':'กรุณาเชื่อมต่อ Google Drive อีกครั้ง'}</strong> ข้อมูลทั้งหมดเก็บในไฟล์บน Google Drive ของคุณ ใช้ร่วมกันได้ทุกเครื่องที่ลงชื่อด้วยบัญชีเดียวกัน${Object.keys(DV.changes).length?' · มีข้อมูลรอบันทึก '+Object.keys(DV.changes).length+' รายการ':''}</span><button class="btn small primary" id="dvBanner" type="button">เชื่อมต่อ Google Drive</button></div>`;
+  $('#banner').innerHTML=b;if($('#dvBanner'))$('#dvBanner').onclick=()=>driveConnect();
+  const cs=$('#clearSample');if(cs)armDelete(cs,'ยืนยัน: ล้างตัวอย่างทั้งหมด',async()=>{const keepT=new Set(Object.values(S.nozzles).filter(n=>!n.sample).map(n=>n.tankId));for(const c of COLS)for(const [id,x] of Object.entries(S[c]))if(x&&x.sample&&!(c==='tanks'&&keepT.has(id)))await del(c,id);toast('ล้างข้อมูลตัวอย่างแล้ว');});
+}
+function armDelete(btn,label,fn){let armed=false,t;const orig=btn.textContent;btn.addEventListener('click',()=>{if(!armed){armed=true;btn.textContent=label;btn.classList.add('arm');t=setTimeout(()=>{armed=false;btn.textContent=orig;btn.classList.remove('arm');},3500);}else{clearTimeout(t);fn();}});}
+
+/* ---------- form dialog ---------- */
+function openForm({title,note,fields,values={},submitLabel='บันทึก',onSubmit}){
+  const dlg=$('#dlg');
+  const fld=f=>{const v=values[f.key]??f.default??'';const id='f_'+f.key;const cls=f.full?' class="full"':'';
+    if(f.type==='select')return `<label${cls} for="${id}">${esc(f.label)}<select id="${id}" name="${f.key}">${f.options.map(o=>`<option value="${esc(o[0])}"${String(o[0])===String(v)?' selected':''}>${esc(o[1])}</option>`).join('')}</select></label>`;
+    return `<label${cls} for="${id}">${esc(f.label)}<input id="${id}" name="${f.key}" type="${f.type||'text'}" value="${esc(v)}"${f.step?` step="${f.step}"`:''}${f.min!=null?` min="${f.min}"`:''}${f.required?' required':''}${f.placeholder?` placeholder="${esc(f.placeholder)}"`:''}></label>`;};
+  dlg.innerHTML=`<form id="dlgForm" novalidate><h2>${esc(title)}</h2>${note?`<p class="note">${note}</p>`:''}<div class="fgrid">${fields.map(fld).join('')}</div><p class="form-err" id="formErr"></p><div class="dlg-actions"><button type="button" class="btn ghost" id="dlgCancel">ยกเลิก</button><button type="submit" class="btn primary">${esc(submitLabel)}</button></div></form>`;
+  $('#dlgCancel').onclick=()=>dlg.close();
+  $('#dlgForm').onsubmit=e=>{e.preventDefault();const fd=new FormData(e.target);const out={};
+    for(const f of fields){let v=fd.get(f.key);if(f.type==='number')v=(v===''||v==null)?null:+v;else v=(v||'').trim();
+      if(f.required&&(v===null||v===''||(typeof v==='number'&&isNaN(v)))){$('#formErr').textContent='กรุณากรอก '+f.label;return;}out[f.key]=v;}
+    const err=onSubmit(out);if(err){$('#formErr').textContent=err;return;}dlg.close();};
+  dlg.showModal();
+}
+const PIN='1234';
+function pinGate(title,action,fn){const dlg=$('#dlg');const danger=action==='ลบ';
+  dlg.innerHTML=`<form id="pinForm" novalidate><h2>${esc(title)}</h2><p class="note">${danger?'การลบไม่สามารถย้อนกลับได้ ':''}กรุณากรอกรหัสผ่านเพื่อยืนยันการ${esc(action)}</p><div class="fgrid"><label class="full" for="f_pin">รหัสผ่าน<input id="f_pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" class="pin-in"></label></div><p class="form-err" id="formErr"></p><div class="dlg-actions"><button type="button" class="btn ghost" id="dlgCancel">ยกเลิก</button><button type="submit" class="btn ${danger?'danger-solid':'primary'}">${danger?'ยืนยันการลบ':'ยืนยัน'}</button></div></form>`;
+  $('#dlgCancel').onclick=()=>dlg.close();
+  $('#pinForm').onsubmit=e=>{e.preventDefault();const inp=$('#f_pin');
+    if(inp.value!==PIN){$('#formErr').textContent='รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';inp.value='';inp.focus();return;}
+    dlg.close();fn();};
+  dlg.showModal();setTimeout(()=>{const i=$('#f_pin');if(i)i.focus();},0);
+}
+$('#btnSettings').onclick=()=>{const st=S.settings.main||{};openForm({title:'ตั้งค่าสถานี',fields:[{key:'name',label:'ชื่อสถานี',full:true,required:true,default:'ปั๊มน้ำมันของฉัน'},{key:'currency',label:'สัญลักษณ์สกุลเงิน',default:'฿',required:true}],values:st,onSubmit:v=>{put('settings','main',{...v});}});};
+
+/* ---------- 1. tanks ---------- */
+function tankForm(id){const t=id?S.tanks[id]:null;
+  openForm({title:t?'แก้ไขถังน้ำมัน':'เพิ่มถังน้ำมัน',note:t?'การเปลี่ยนสต็อกตั้งต้นจะเริ่มนับระดับน้ำมันในถังใหม่จากค่านี้':'สต็อกตั้งต้นคือปริมาณน้ำมันในถัง ณ สิ้นวันที่เริ่มต้น ยอดขายและการรับน้ำมันหลังวันนั้นจะถูกนำมาคำนวณระดับถัง',
+    fields:[{key:'name',label:'ชื่อถัง',required:true,placeholder:'ถัง 1'},{key:'fuel',label:'ชนิดน้ำมัน',type:'select',options:fuelOpts(t&&t.fuel),default:FUELS[0]},
+      {key:'capacity',label:'ความจุ (ลิตร)',type:'number',min:0,required:true},{key:'lowPct',label:'เตือนสต็อกต่ำ (%)',type:'number',min:0,default:20},
+      {key:'sellPrice',label:'ราคาขายวันนี้ต่อลิตร (ใช้กับน้ำมันชนิดนี้ทุกถัง)',type:'number',step:'0.01',min:0,required:true,default:priceOf(FUELS[0])||''},{key:'refCost',label:'ต้นทุนต่อลิตร (ใช้จนกว่าจะรับน้ำมันครั้งแรก)',type:'number',step:'0.01',min:0},
+      {key:'baseLevel',label:'สต็อกตั้งต้น (ลิตร)',type:'number',min:0,required:true,default:0},{key:'baseDate',label:'วันที่เริ่มต้น',type:'date',required:true,default:addDays(today(),-1)},
+      {key:'color',label:'สี',type:'select',options:Object.entries(SWATCH),default:'blue',full:true}],
+    values:t?{...t,sellPrice:priceOf(t.fuel)}:{},onSubmit:v=>{if(v.baseLevel>v.capacity)return 'สต็อกตั้งต้นมากกว่าความจุของถัง';const keep={...(t&&t.sample?{sample:true}:{}),...(t&&t.order!=null?{order:t.order}:{})};
+      const old=priceOf(v.fuel),others=Object.entries(S.tanks).some(([k,x])=>k!==id&&x.fuel===v.fuel);
+      put('tanks',id||'t'+uid(),{...keep,...v});
+      if(old!==v.sellPrice||priceInfo(v.fuel,today()).from==null){setDayPrices(today(),{[v.fuel]:v.sellPrice});if(others&&old!==v.sellPrice)toast('ปรับราคาขายวันนี้ของ '+v.fuel+' เป็น '+v.sellPrice.toFixed(2)+' สำหรับทุกถังที่ใช้น้ำมันชนิดนี้แล้ว');}}});
+  const fs=$('#f_fuel'),ps=$('#f_sellPrice');if(fs&&ps)fs.addEventListener('change',()=>{const p=priceOf(fs.value);ps.value=p?p:'';});}
+function fuelOpts(extra){const l=[...FUELS];if(extra&&!l.includes(extra))l.push(extra);return l.map(f=>[f,f]);}
+function priceForm(date){date=date||today();const used=fuelsUsed();
+  const src=dt=>{const i=used.map(f=>priceInfo(f,dt).from);return i.every(x=>x===dt)?'ตั้งราคาของวันนี้ไว้แล้ว แก้ไขได้':(i.find(x=>x&&x<dt)?'ยังไม่ได้ตั้งราคาวันนี้ · ค่าที่แสดงยกมาจากวันที่ '+fdate(i.filter(x=>x&&x<dt).sort().pop()):'ยังไม่เคยตั้งราคา');};
+  openForm({title:'ตั้งราคาขายประจำวัน',note:'ราคาที่ตั้งจะใช้ตั้งแต่วันที่เลือกเป็นต้นไปจนกว่าจะตั้งราคาใหม่ วันที่ไม่ได้ตั้งจะใช้ราคาของวันก่อนหน้าอัตโนมัติ เลขมิเตอร์ที่บันทึกด้วยราคาเดิมจะถูกปรับตามราคาใหม่ ยกเว้นรายการที่แก้ราคาเอง',
+    fields:[{key:'date',label:'วันที่',type:'date',required:true,default:date,full:true},...used.map((f,i)=>({key:'p'+i,label:f+' (บาท/ลิตร)',type:'number',step:'0.01',min:0,required:true,default:priceOn(f,date)||'',full:true}))],
+    submitLabel:'บันทึกราคา',
+    onSubmit:v=>{const ch={};used.forEach((f,i)=>ch[f]=v['p'+i]);setDayPrices(v.date,ch).then(n=>toast('บันทึกราคาขายวันที่ '+fdate(v.date)+' แล้ว'+(n?' · ปรับยอดขาย '+n+' รายการตามราคาใหม่':'')));}});
+  const di=$('#f_date'),grid=di.closest('.fgrid');const hint=document.createElement('p');hint.className='note full';hint.style.margin='0';hint.textContent=src(date);di.closest('label').after(hint);
+  di.addEventListener('change',()=>{if(!di.value)return;used.forEach((f,i)=>{const p=priceOn(f,di.value);$('#f_p'+i).value=p||'';});hint.textContent=src(di.value);});}
+function dipForm(id){const t=S.tanks[id];openForm({title:'วัดน้ำมันในถัง · '+t.name,note:'กรอกปริมาณน้ำมันที่วัดได้จริง ณ สิ้นวัน ระดับถังจะเริ่มนับใหม่จากค่านี้ ยอดขายและการรับน้ำมันหลังวันนี้จะคำนวณต่อจากตัวเลขนี้',
+  fields:[{key:'level',label:'ปริมาณที่วัดได้ (ลิตร)',type:'number',min:0,required:true,default:Math.round(tankLevel(id))},{key:'date',label:'วัด ณ สิ้นวันที่',type:'date',required:true,default:today()}],
+  onSubmit:v=>{const calc=tankLevel(id);put('tanks',id,{...t,baseLevel:v.level,baseDate:v.date});toast('บันทึกการวัดแล้ว ส่วนต่างจากสต็อกตามบัญชี: '+L(v.level-calc)+' ลิตร');}});}
+function nozzleForm(id){const n=id?S.nozzles[id]:null;const tanks=tanksSorted();if(!tanks.length){toast('กรุณาเพิ่มถังน้ำมันก่อน');return;}
+  openForm({title:n?'แก้ไขหัวจ่าย':'เพิ่มหัวจ่าย / มิเตอร์',note:'เลขมิเตอร์เริ่มต้นคือเลขมิเตอร์สะสมก่อนวันแรกที่บันทึก',
+    fields:[{key:'name',label:'ชื่อหัวจ่าย',required:true,placeholder:'ตู้ 1 · หัวจ่าย A'},{key:'tankId',label:'ดูดน้ำมันจากถัง',type:'select',options:tanks.map(([tid,t])=>[tid,t.name+' · '+t.fuel])},
+      {key:'initialMeter',label:'เลขมิเตอร์เริ่มต้น',type:'number',step:'0.01',min:0,required:true,default:0,full:true}],
+    values:n||{},onSubmit:v=>{const keep={...(n&&n.sample?{sample:true}:{}),...(n&&n.order!=null?{order:n.order}:{})};put('nozzles',id||'n'+uid(),{...keep,...v});}});}
+
+let arr={tanks:false,nozzles:false},dragId=null,dragCol=null;
+const arrBar=(col,id,i,n)=>`<div class="arr-bar"><button type="button" class="btn small" data-mv="-1" data-col="${col}" data-id="${id}" aria-label="เลื่อนไปก่อนหน้า"${i===0?' disabled':''}>◀</button><span>ลำดับที่ ${i+1} · ลากเพื่อย้าย</span><button type="button" class="btn small" data-mv="1" data-col="${col}" data-id="${id}" aria-label="เลื่อนไปถัดไป"${i===n-1?' disabled':''}>▶</button></div>`;
+async function reorder(col,ids){for(let i=0;i<ids.length;i++){const x=S[col][ids[i]];if(x&&x.order!==i)await put(col,ids[i],{...x,order:i});}}
+function tankCards(tanks){return '<div class="tank-grid">'+tanks.map(([id,t],ti)=>{
+    const lvl=tankLevel(id),cap=+t.capacity||1,pct=Math.max(0,Math.min(100,lvl/cap*100)),low=+(t.lowPct??20);
+    const avg=dailyAvg(id),cover=avg>0?lvl/avg:null;
+    let chip='<span class="chip good">ปกติ</span>';
+    if(lvl<0)chip='<span class="chip bad">ติดลบ · ตรวจสอบเลขมิเตอร์</span>';else if(lvl>cap)chip='<span class="chip bad">เกินความจุ</span>';else if(pct<=low)chip='<span class="chip warn">ต่ำ · ควรสั่งเพิ่ม</span>';
+    const ac=avgCost(id,'9999-12-31');
+    return `<article class="panel tank${arr.tanks?' arranging':''}" data-oid="${id}" data-col="tanks"${arr.tanks?' draggable="true"':''}>${arr.tanks?arrBar('tanks',id,ti,tanks.length):''}
+      <div class="tank-top"><div><div class="sub">${esc(t.name)}</div><h3><span class="fuel"><i class="dot" style="background:${color(t.color)};width:12px;height:12px"></i>${esc(t.fuel)}</span></h3></div>${chip}</div>
+      <div class="gauge" role="img" aria-label="เต็ม ${Math.round(pct)}%"><div class="fill" style="height:${pct}%;background:${color(t.color)}"></div><div class="low-line" style="bottom:${low}%"></div><div class="pct">${Math.round(pct)}%</div></div>
+      <div class="stats">
+        <div class="stat"><div class="l">สต็อกตามบัญชี</div><div class="v">${L(lvl)} <small>ลิตร</small></div></div>
+        <div class="stat"><div class="l">ความจุ</div><div class="v">${L(cap)} <small>ลิตร</small></div></div>
+        <div class="stat"><div class="l">ที่ว่างในถัง</div><div class="v">${L(Math.max(0,cap-lvl))} <small>ลิตร</small></div></div>
+        <div class="stat"><div class="l">พอขายได้อีก</div><div class="v">${cover==null?'–':cover.toFixed(1)} <small>${cover==null?'':'วัน'}</small></div></div>
+        <div class="stat"><div class="l">ราคาขายวันนี้ / ลิตร</div><div class="v">${priceOf(t.fuel).toFixed(2)}</div></div>
+        <div class="stat"><div class="l">ต้นทุนเฉลี่ย / ลิตร</div><div class="v">${ac?ac.toFixed(2):'–'}</div></div>
+        ${(()=>{if(!ac)return `<div class="stat profit"><div class="l">กำไรต่อลิตร</div><div class="v">– <small>ยังไม่มีข้อมูลต้นทุน</small></div></div>`;const sp=priceOf(t.fuel),pl=sp-ac,pm=sp?pl/sp*100:0;
+          return `<div class="stat profit${pl<0?' neg':''}"><div class="l">กำไรต่อลิตร</div><div class="v">${pl.toFixed(2)} <small>${esc(cur())}/ลิตร · ${pm.toFixed(1)}%</small></div></div>`;})()}
+      </div>
+    </article>`;}).join('')+'</div>';}
+function priceBoard(){const td=today(),yd=addDays(td,-1);
+  const fu=[];for(const [,t] of tanksSorted())if(!fu.find(x=>x.f===t.fuel))fu.push({f:t.fuel,c:t.color});
+  if(!fu.length)FUELS.forEach(f=>fu.push({f,c:'slate'}));
+  const inf=fu.map(x=>{const i=priceInfo(x.f,td),y=priceInfo(x.f,yd);return {...x,...i,prev:y.from?y.p:null};});
+  const setToday=inf.every(x=>x.from===td);
+  const prev=inf.map(x=>x.from).filter(x=>x&&x<td).sort().pop();
+  const d=new Date(td+'T00:00:00');
+  const drop='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/></svg>';
+  const delta=x=>{if(x.prev==null||!x.prev)return '<span class="pb-dl flat">ยังไม่มีราคาเมื่อวาน</span>';const df=x.p-x.prev;
+    if(Math.abs(df)<0.005)return '<span class="pb-dl flat">เท่ากับเมื่อวาน</span>';
+    return `<span class="pb-dl ${df>0?'up':'down'}">${df>0?'▲':'▼'} ${Math.abs(df).toFixed(2)} จากเมื่อวาน</span>`;};
+  return `<section class="pboard" aria-label="ราคาขายวันนี้">
+    <div class="pb-hd"><div class="pb-when"><span class="pb-l">ราคาขายประจำวัน</span><span class="pb-d">${DOW[d.getDay()]} ${esc(fdate(td))}</span></div>
+      <div class="pb-act">${setToday?'<span class="chip good">✓ บันทึกราคาวันนี้แล้ว</span>':`<span class="chip warn">ยังไม่ได้บันทึกราคาวันนี้${prev?' · ใช้ราคาของ '+esc(fdateShort(prev)):''}</span>`}
+      <button class="btn ${setToday?'':'primary'}" id="pbEdit" type="button">${setToday?'แก้ไขราคาขาย':'บันทึกราคาขายวันนี้'}</button></div></div>
+    <div class="pb-tiles">${inf.map(x=>`<div class="pb-tile" style="--fc:${color(x.c)}"><div class="pb-top"><span class="pb-ic">${drop}</span><span class="pb-f">${esc(x.f)}</span></div>
+      <div class="pb-v">${x.p.toFixed(2)}<small>${esc(cur())}/ลิตร</small></div>${delta(x)}</div>`).join('')}</div>
+  </section>`;}
+function renderTanks(main){
+  const tanks=tanksSorted();
+  let h=priceBoard()+`<div class="sec-head" style="margin-top:24px"><div><h2>ถังน้ำมัน</h2><p>สต็อกตามบัญชี = สต็อกตั้งต้น + น้ำมันที่รับเข้า − ลิตรที่ขายตามเลขมิเตอร์ · กำไรต่อลิตร = ราคาขาย − ต้นทุนเฉลี่ย</p></div>${tanks.length>1?`<button class="btn${arr.tanks?' primary':''}" data-arr="tanks" type="button">${arr.tanks?'เสร็จสิ้น':'จัดเรียง'}</button>`:''}</div>`;
+  if(!tanks.length)h+=`<div class="panel empty"><strong>ยังไม่มีถังน้ำมัน</strong>เพิ่มถังน้ำมันได้ที่เมนู "ตั้งค่าถังและหัวจ่าย"</div>`;
+  else h+=tankCards(tanks);
+  const noz=nozzlesSorted();
+  h+=`<div class="sec-head" style="margin-top:28px"><div><h2>หัวจ่าย</h2><p>สถานะหัวจ่ายแต่ละหัว เลขมิเตอร์ล่าสุด และยอดขายล่าสุด</p></div>${noz.length>1?`<button class="btn${arr.nozzles?' primary':''}" data-arr="nozzles" type="button">${arr.nozzles?'เสร็จสิ้น':'จัดเรียง'}</button>`:''}</div>`;
+  if(!noz.length)h+=`<div class="panel empty"><strong>ยังไม่มีหัวจ่าย</strong>เพิ่มหัวจ่ายได้ที่เมนู "ตั้งค่าถังและหัวจ่าย"</div>`;
+  else{const ico='<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="11" height="18" rx="1.5"/><rect x="5.5" y="6" width="6" height="4" rx=".5"/><path d="M14 9h2.5a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>';
+    const ring=(pct,txt)=>{const r=27,c=2*Math.PI*r,off=c*(1-pct/100);return `<svg width="68" height="68" viewBox="0 0 68 68" role="img" aria-label="ระดับถัง ${Math.round(pct)}%"><circle cx="34" cy="34" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="7"/><circle cx="34" cy="34" r="${r}" fill="none" stroke="var(--fc)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 34 34)"/><text x="34" y="38" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="Barlow Condensed,sans-serif">${txt}</text></svg>`;};
+    h+='<div class="pump-grid">'+noz.map(([id,n],ni)=>{const t=S.tanks[n.tankId];const lr=lastReading(id);
+    const pct=t?Math.max(0,Math.min(100,tankLevel(n.tankId)/(+t.capacity||1)*100)):0;
+    return `<article class="pump${t?'':' unlinked'}${arr.nozzles?' arranging':''}" style="--fc:${t?color(t.color):'var(--f-slate)'}" data-oid="${id}" data-col="nozzles"${arr.nozzles?' draggable="true"':''}>${arr.nozzles?arrBar('nozzles',id,ni,noz.length):''}
+      <div class="pump-hd"><div class="pump-name"><span class="ic">${ico}</span><span>${esc(n.name)}</span></div><span class="fuel-pill">${t?esc(t.fuel):'ยังไม่ผูกถัง'}</span></div>
+      <div class="pump-price"><div class="l">เลขมิเตอร์ล่าสุด${lr?'':' (เริ่มต้น)'}</div><div class="v meter-v">${nL(lr?lr.close:n.initialMeter)}</div></div>
+      <div class="ring">${ring(pct,t?Math.round(pct)+'%':'–')}<span class="rt">${t?esc(t.name):'ไม่มีถัง'}</span></div>
+      <div class="pump-stats one"><div><div class="l">ขายล่าสุด${lr?' ('+esc(fdate(lr.date))+')':''}</div><div class="v">${lr?nL(lr.litres)+'<small>ลิตร</small>':'–'}</div></div></div>
+      <div class="pump-ft${lr?'':' none'}"><i class="dot"></i>${lr?'บันทึกล่าสุด '+esc(fdate(lr.date)):(t?'ยังไม่มีการบันทึก · แสดงมิเตอร์เริ่มต้น':'ผูกถังได้ที่เมนู 6 ตั้งค่าถังและหัวจ่าย')}</div>
+    </article>`;}).join('')+'</div>';}
+  main.innerHTML=h;
+  $('#pbEdit').onclick=()=>pinGate('ราคาขายประจำวัน','บันทึก/แก้ไขราคาขาย',()=>priceForm(today()));
+  const listIds=col=>(col==='tanks'?tanksSorted():nozzlesSorted()).map(x=>x[0]);
+  main.querySelectorAll('[data-arr]').forEach(b=>b.onclick=()=>{arr[b.dataset.arr]=!arr[b.dataset.arr];if(!arr[b.dataset.arr])toast('บันทึกลำดับแล้ว');render(true);});
+  main.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{const col=b.dataset.col,ids=listIds(col),i=ids.indexOf(b.dataset.id),j=i+(+b.dataset.mv);if(i<0||j<0||j>=ids.length)return;[ids[i],ids[j]]=[ids[j],ids[i]];reorder(col,ids);});
+  main.querySelectorAll('[draggable="true"]').forEach(el=>{
+    el.addEventListener('dragstart',e=>{dragId=el.dataset.oid;dragCol=el.dataset.col;el.classList.add('dragging');try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId);}catch(_){}});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');main.querySelectorAll('.drop-t').forEach(x=>x.classList.remove('drop-t'));});
+    el.addEventListener('dragover',e=>{if(el.dataset.col===dragCol&&el.dataset.oid!==dragId){e.preventDefault();el.classList.add('drop-t');}});
+    el.addEventListener('dragleave',()=>el.classList.remove('drop-t'));
+    el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('drop-t');if(el.dataset.col!==dragCol||el.dataset.oid===dragId)return;
+      const ids=listIds(dragCol),from=ids.indexOf(dragId),to=ids.indexOf(el.dataset.oid);ids.splice(from,1);ids.splice(to,0,dragId);reorder(dragCol,ids);});});
+}
+/* ---------- 5. fuel credit (ลูกหนี้สินเชื่อน้ำมัน) ---------- */
+let selCust=null;
+const custBal=cid=>{let b=0;for(const x of Object.values(S.credits))if(x.customerId===cid)b+=x.type==='payment'?-(+x.amount||0):(+x.amount||0);return Math.round(b*100)/100;};
+const custTx=cid=>Object.entries(S.credits).filter(([,x])=>x.customerId===cid).sort((a,b)=>(a[1].date+(a[1].createdAt||'')).localeCompare(b[1].date+(b[1].createdAt||'')));
+const custSorted=()=>Object.entries(S.customers).sort((a,b)=>(custBal(b[0])-custBal(a[0]))||String(a[1].name).localeCompare(String(b[1].name),'th'));
+function custForm(id){const c=id?S.customers[id]:null;
+  openForm({title:c?'แก้ไขข้อมูลลูกค้า':'เพิ่มลูกค้าสินเชื่อ',note:'วงเงินเครดิต 0 หมายถึงไม่จำกัดวงเงิน',
+    fields:[{key:'name',label:'ชื่อลูกค้า / บริษัท',required:true,full:true,placeholder:'เช่น หจก. ขนส่งสมใจ'},{key:'phone',label:'เบอร์โทร'},{key:'plate',label:'ทะเบียนรถ',placeholder:'เช่น 70-1234, 1กข 5678'},
+      {key:'limit',label:'วงเงินเครดิต (บาท)',type:'number',min:0,default:0},{key:'term',label:'ระยะเวลาชำระ (วัน)',type:'number',min:0,default:30},{key:'note',label:'หมายเหตุ',full:true}],
+    values:c||{},onSubmit:v=>{const nid=id||'c'+uid();put('customers',nid,{...(c||{}),...v});selCust=nid;toast(c?'บันทึกข้อมูลลูกค้าแล้ว':'เพิ่มลูกค้าแล้ว');}});}
+function saleForm(cid,txid){const tx=txid?S.credits[txid]:null;const custs=custSorted();if(!custs.length){toast('กรุณาเพิ่มลูกค้าก่อน');return;}
+  const fuels=fuelsUsed();const d0=tx?tx.date:today(),f0=tx?tx.fuel:fuels[0];
+  openForm({title:tx?'แก้ไขรายการเติมเชื่อ':'บันทึกการเติมน้ำมันเงินเชื่อ',note:'ราคาต่อลิตรดึงจากราคาขายประจำวันของวันที่เลือก กรอกได้ทั้งจำนวนลิตรหรือจำนวนเงิน ระบบคำนวณอีกช่องให้',
+    fields:[{key:'date',label:'วันที่',type:'date',required:true,default:d0},{key:'customerId',label:'ลูกค้า',type:'select',options:custs.map(([k,c])=>[k,c.name]),default:cid||custs[0][0]},
+      {key:'fuel',label:'ชนิดน้ำมัน',type:'select',options:fuels.map(f=>[f,f]),default:f0},{key:'price',label:'ราคาต่อลิตร (ราคาประจำวัน)',type:'number',step:'0.01',default:priceOn(f0,d0)},
+      {key:'litres',label:'จำนวนลิตร',type:'number',step:'0.01',min:0},{key:'amount',label:'จำนวนเงิน (บาท)',type:'number',step:'0.01',min:0},
+      {key:'plate',label:'ทะเบียนรถ'},{key:'ref',label:'เลขที่บิล / ใบเสร็จ'},{key:'note',label:'หมายเหตุ',full:true}],
+    values:tx||{},submitLabel:'บันทึก',
+    onSubmit:v=>{if(!(v.litres>0)&&!(v.amount>0))return 'กรุณากรอกจำนวนลิตรหรือจำนวนเงิน';v.price=priceOn(v.fuel,v.date);
+      if(!(v.amount>0))v.amount=Math.round(v.litres*v.price*100)/100;if(!(v.litres>0))v.litres=v.price?Math.round(v.amount/v.price*100)/100:0;
+      const k=txid||'x'+uid();const old=tx?(+tx.amount||0):0;put('credits',k,{...(tx||{}),...v,type:'sale',createdAt:tx&&tx.createdAt||new Date().toISOString()});selCust=v.customerId;
+      const c=S.customers[v.customerId]||{};const bal=custBal(v.customerId);
+      toast(c.limit>0&&bal>c.limit?'บันทึกแล้ว · เกินวงเงิน '+M0(bal-c.limit):'บันทึกการเติมเชื่อแล้ว');}});
+  const $d=$('#f_date'),$f=$('#f_fuel'),$p=$('#f_price'),$l=$('#f_litres'),$a=$('#f_amount');$p.readOnly=true;$p.style.background='var(--surface-2)';
+  const syncP=()=>{$p.value=priceOn($f.value,$d.value||today()).toFixed(2);if($l.value)$a.value=(+$l.value*+$p.value).toFixed(2);};
+  $d.addEventListener('change',syncP);$f.addEventListener('change',syncP);
+  $l.addEventListener('input',()=>{$a.value=$l.value?(+$l.value*+$p.value).toFixed(2):'';});
+  $a.addEventListener('input',()=>{$l.value=$a.value&&+$p.value?(+$a.value/+$p.value).toFixed(2):'';});}
+function payForm(cid,txid){const tx=txid?S.credits[txid]:null;const custs=custSorted();if(!custs.length){toast('กรุณาเพิ่มลูกค้าก่อน');return;}
+  const c0=tx?tx.customerId:(cid||custs[0][0]);
+  openForm({title:tx?'แก้ไขรายการรับชำระ':'รับชำระเงิน',
+    fields:[{key:'date',label:'วันที่',type:'date',required:true,default:today()},{key:'customerId',label:'ลูกค้า',type:'select',options:custs.map(([k,c])=>[k,c.name+' (ค้าง '+M0(custBal(k))+')']),default:c0},
+      {key:'amount',label:'จำนวนเงิน (บาท)',type:'number',step:'0.01',min:0,required:true,default:tx?'':Math.max(0,custBal(c0))||''},{key:'method',label:'ช่องทาง',type:'select',options:[['cash','เงินสด'],['transfer','โอนเงิน'],['cheque','เช็ค']],default:'cash'},
+      {key:'ref',label:'เลขที่อ้างอิง / ใบเสร็จ'},{key:'note',label:'หมายเหตุ'}],
+    values:tx||{},submitLabel:'บันทึกรับชำระ',
+    onSubmit:v=>{if(!(v.amount>0))return 'กรุณากรอกจำนวนเงิน';put('credits',txid||'x'+uid(),{...(tx||{}),...v,type:'payment',createdAt:tx&&tx.createdAt||new Date().toISOString()});selCust=v.customerId;toast('บันทึกรับชำระแล้ว');}});
+  const $c=$('#f_customerId'),$a=$('#f_amount');if(!tx)$c.addEventListener('change',()=>{$a.value=Math.max(0,custBal($c.value))||'';});}
+function renderCredit(main){
+  const custs=custSorted();if(selCust&&!S.customers[selCust])selCust=null;if(!selCust&&custs.length)selCust=custs[0][0];
+  const totalOut=custs.reduce((s,[k])=>s+Math.max(0,custBal(k)),0),owing=custs.filter(([k])=>custBal(k)>0.005).length;
+  const mFrom=today().slice(0,8)+'01';let mSale=0,mL=0,mPay=0;for(const x of Object.values(S.credits))if(x.date>=mFrom&&x.date<=today()){if(x.type==='payment')mPay+=+x.amount||0;else{mSale+=+x.amount||0;mL+=+x.litres||0;}}
+  const overLimit=custs.filter(([k,c])=>c.limit>0&&custBal(k)>c.limit).length;
+  const oldestUnpaid=cid=>{/* FIFO: payments clear the oldest sales first */let paid=0;for(const [,x] of custTx(cid))if(x.type==='payment')paid+=+x.amount||0;
+    for(const [,x] of custTx(cid)){if(x.type!=='sale')continue;paid-=+x.amount||0;if(paid<-0.005)return x.date;}return null;};
+  const ageDays=d=>d?Math.round((new Date(today())-new Date(d))/864e5):0;
+  let h=`<div class="sec-head"><div><h2>ลูกหนี้สินเชื่อน้ำมัน</h2><p>บันทึกลูกค้าที่เติมน้ำมันเงินเชื่อ และการรับชำระเงิน ยอดค้างคำนวณให้อัตโนมัติ</p></div>
+    <div class="row-actions"><button class="btn" id="cAdd" type="button">เพิ่มลูกค้า</button><button class="btn" id="cPay" type="button">รับชำระเงิน</button><button class="btn primary" id="cSale" type="button">บันทึกเติมเชื่อ</button></div></div>
+  <div class="kpis">
+    <div class="panel kpi hero"><div class="l">ยอดค้างชำระรวม</div><div class="v">${M0(totalOut)}</div><div class="s">ลูกค้าค้างชำระ ${owing} ราย${overLimit?' · เกินวงเงิน '+overLimit+' ราย':''}</div></div>
+    <div class="panel kpi"><div class="l">เติมเชื่อเดือนนี้</div><div class="v">${M0(mSale)}</div><div class="s">${L(mL)} ลิตร</div></div>
+    <div class="panel kpi"><div class="l">รับชำระเดือนนี้</div><div class="v">${M0(mPay)}</div><div class="s">${mSale?'คิดเป็น '+(mPay/mSale*100).toFixed(0)+'% ของยอดเติมเชื่อ':'–'}</div></div>
+    <div class="panel kpi"><div class="l">ลูกค้าทั้งหมด</div><div class="v">${custs.length}</div><div class="s">ราย</div></div>
+  </div>`;
+  if(!custs.length){h+=`<div class="panel empty"><strong>ยังไม่มีลูกค้าสินเชื่อ</strong>กด "เพิ่มลูกค้า" เพื่อเริ่มบันทึกลูกค้าที่เติมน้ำมันเงินเชื่อ</div>`;main.innerHTML=h;bindCredit(main);return;}
+  h+=`<div class="credit-layout"><section class="panel tbl-wrap"><div class="panel-h">รายชื่อลูกค้า</div><ul class="cust-list">${custs.map(([k,c])=>{const b=custBal(k),lim=+c.limit||0,pct=lim?Math.min(100,Math.max(0,b/lim*100)):0,od=oldestUnpaid(k),age=ageDays(od),late=od&&c.term>0&&age>c.term;
+    return `<li><button type="button" data-cust="${k}" class="${k===selCust?'on':''}"><span class="cl-top"><strong>${esc(c.name)}</strong><span class="mono cl-bal${b>0.005?(lim&&b>lim?' over':''):' zero'}">${M0(b)}</span></span>
+      ${lim?`<span class="cl-lim"><span class="sb"><i style="width:${pct}%" class="${b>lim?'over':pct>=80?'hi':''}"></i></span><span>วงเงิน ${M0(lim)}</span></span>`:'<span class="cl-lim muted">ไม่จำกัดวงเงิน</span>'}
+      ${late?`<span class="chip bad">ค้างนาน ${age} วัน</span>`:b>0.005&&od?`<span class="cl-age">ค้างตั้งแต่ ${esc(fdateShort(od))}</span>`:''}</button></li>`;}).join('')}</ul></section>`;
+  const c=S.customers[selCust],b=custBal(selCust),tx=custTx(selCust);let run=0;const rows=tx.map(([k,x])=>{run+=x.type==='payment'?-(+x.amount||0):(+x.amount||0);return {k,x,run};}).reverse();
+  const MT={cash:'เงินสด',transfer:'โอนเงิน',cheque:'เช็ค'};
+  h+=`<section class="panel cust-detail"><div class="cd-head"><div><h3>${esc(c.name)}</h3><div class="muted cd-info">${[c.phone&&'โทร '+esc(c.phone),c.plate&&'ทะเบียน '+esc(c.plate),c.term>0&&'ชำระภายใน '+c.term+' วัน'].filter(Boolean).join(' · ')||'ไม่มีข้อมูลติดต่อ'}</div>${c.note?`<div class="muted cd-info">${esc(c.note)}</div>`:''}</div>
+      <div class="cd-bal"><span class="l">ยอดค้างชำระ</span><span class="v${b>0.005?' owe':''}">${M(b)}</span>${c.limit>0?`<span class="l">วงเงินคงเหลือ ${M0(Math.max(0,c.limit-b))}</span>`:''}</div></div>
+    <div class="cd-act"><button class="btn primary small" id="cdSale" type="button">+ เติมเชื่อ</button><button class="btn small" id="cdPay" type="button">รับชำระ</button><span style="flex:1"></span><button class="btn small" id="cdEdit" type="button">แก้ไขลูกค้า</button><button class="btn small danger" id="cdDel" type="button">ลบลูกค้า</button></div>
+    ${rows.length?`<div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th>รายการ</th><th class="r">ลิตร</th><th class="r">เติมเชื่อ</th><th class="r">รับชำระ</th><th class="r">คงค้าง</th><th></th></tr></thead><tbody>${rows.map(({k,x,run})=>`<tr>
+      <td>${esc(fdate(x.date))}</td>
+      <td>${x.type==='payment'?`<span class="chip good">รับชำระ</span> <span class="muted">${esc(MT[x.method]||'')}</span>`:`<span class="fuel">${esc(x.fuel||'')}</span> <span class="muted">@ ${(+x.price||0).toFixed(2)}</span>`}${x.plate?` <span class="muted">· ${esc(x.plate)}</span>`:''}${x.ref?`<div class="muted" style="font-size:12px">${esc(x.ref)}</div>`:''}${x.note?`<div class="muted" style="font-size:12px">${esc(x.note)}</div>`:''}</td>
+      <td class="r mono">${x.type==='sale'?nL(x.litres):''}</td><td class="r mono">${x.type==='sale'?M(x.amount):''}</td><td class="r mono" style="color:var(--good)">${x.type==='payment'?M(x.amount):''}</td><td class="r mono"><strong>${M(run)}</strong></td>
+      <td><div class="row-actions"><button class="btn small" data-txe="${k}" type="button">แก้ไข</button><button class="btn small danger" data-txd="${k}" type="button">ลบ</button></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">ยังไม่มีรายการของลูกค้ารายนี้</div>'}
+  </section></div>`;
+  main.innerHTML=h;bindCredit(main);
+  main.querySelectorAll('[data-cust]').forEach(x=>x.onclick=()=>{selCust=x.dataset.cust;render(true);});
+  $('#cdSale').onclick=()=>saleForm(selCust);$('#cdPay').onclick=()=>payForm(selCust);
+  $('#cdEdit').onclick=()=>pinGate('แก้ไขลูกค้า · '+c.name,'แก้ไข',()=>custForm(selCust));
+  $('#cdDel').onclick=()=>{if(Math.abs(b)>0.005){toast('ลบไม่ได้ ลูกค้ายังมียอดค้าง '+M0(b));return;}const id=selCust;
+    pinGate('ลบลูกค้า · '+c.name,'ลบ',async()=>{for(const [k] of custTx(id))await del('credits',k);await del('customers',id);selCust=null;toast('ลบลูกค้าแล้ว');});};
+  main.querySelectorAll('[data-txe]').forEach(x=>x.onclick=()=>{const t=S.credits[x.dataset.txe];pinGate('แก้ไขรายการ','แก้ไข',()=>t.type==='payment'?payForm(t.customerId,x.dataset.txe):saleForm(t.customerId,x.dataset.txe));});
+  main.querySelectorAll('[data-txd]').forEach(x=>x.onclick=()=>pinGate('ลบรายการ · '+fdate(S.credits[x.dataset.txd].date),'ลบ',()=>{del('credits',x.dataset.txd);toast('ลบรายการแล้ว');}));
+}
+function bindCredit(main){$('#cAdd').onclick=()=>custForm();$('#cSale').onclick=()=>saleForm(selCust);$('#cPay').onclick=()=>payForm(selCust);}
+function renderManage(main){
+  const tanks=tanksSorted(),noz=nozzlesSorted();
+  let h=`<div class="sec-head"><div><h2>ตั้งค่าถังน้ำมัน</h2><p>เพิ่ม แก้ไข ลบ และวัดน้ำมันในถัง ทุกรายการต้องใส่รหัสผ่านเพื่อยืนยัน</p></div><button class="btn primary" id="addTank" type="button">เพิ่มถังน้ำมัน</button></div>`;
+  if(!tanks.length)h+=`<div class="panel empty"><strong>ยังไม่มีถังน้ำมัน</strong>เพิ่มถังน้ำมันใต้ดินถังแรก พร้อมความจุ ชนิดน้ำมัน และราคาขาย</div>`;
+  else h+=`<div class="panel tbl-wrap"><table><thead><tr><th>ถัง</th><th>ชนิดน้ำมัน</th><th class="r">ความจุ</th><th class="r">สต็อกตามบัญชี</th><th class="r">เตือนต่ำ</th><th>สต็อกตั้งต้น</th><th></th></tr></thead><tbody>${tanks.map(([id,t])=>`<tr><td><strong>${esc(t.name)}</strong></td><td><span class="fuel"><i class="dot" style="background:${color(t.color)}"></i>${esc(t.fuel)}</span></td><td class="r mono">${L(t.capacity)}</td><td class="r mono">${L(tankLevel(id))}</td><td class="r mono">${+(t.lowPct??20)}%</td><td class="muted">${L(t.baseLevel)} ลิตร · ${esc(fdate(t.baseDate))}</td><td><div class="row-actions"><button class="btn small" data-dip="${id}" type="button">วัดน้ำมันในถัง</button><button class="btn small" data-edit="${id}" type="button">แก้ไข</button><button class="btn small danger" data-del="${id}" type="button">ลบ</button></div></td></tr>`).join('')}</tbody></table></div>`;
+  h+=`<div class="sec-head" style="margin-top:28px"><div><h2>ตั้งค่าหัวจ่ายและมิเตอร์</h2><p>หัวจ่ายแต่ละหัวมีมิเตอร์สะสม ลิตรที่ขายต่อวัน = เลขปิด − เลขเปิด</p></div><button class="btn primary" id="addNoz" type="button">เพิ่มหัวจ่าย</button></div>`;
+  if(!noz.length)h+=`<div class="panel empty"><strong>ยังไม่มีหัวจ่าย</strong>เพิ่มหัวจ่ายแต่ละหัว แล้วเลือกถังที่หัวจ่ายนั้นดูดน้ำมัน</div>`;
+  else h+=`<div class="panel tbl-wrap"><table><thead><tr><th>หัวจ่าย</th><th>ถัง · ชนิดน้ำมัน</th><th class="r">มิเตอร์เริ่มต้น</th><th class="r">เลขปิดล่าสุด</th><th>บันทึกล่าสุด</th><th></th></tr></thead><tbody>${noz.map(([id,n])=>{const t=S.tanks[n.tankId];const lr=lastReading(id);
+    return `<tr><td><strong>${esc(n.name)}</strong></td><td>${t?`<span class="fuel"><i class="dot" style="background:${color(t.color)}"></i>${esc(t.name)} · ${esc(t.fuel)}</span>`:'<span class="chip bad">ยังไม่ผูกถัง</span>'}</td><td class="r mono">${nL(n.initialMeter)}</td><td class="r mono">${lr?nL(lr.close):'–'}</td><td class="muted">${lr?fdate(lr.date):'ยังไม่มี'}</td><td><div class="row-actions"><button class="btn small" data-nedit="${id}" type="button">แก้ไข</button><button class="btn small danger" data-ndel="${id}" type="button">ลบ</button></div></td></tr>`;}).join('')}</tbody></table></div>`;
+  main.innerHTML=h;
+  $('#addTank').onclick=()=>pinGate('เพิ่มถังน้ำมัน','เพิ่มถัง',()=>tankForm());
+  $('#addNoz').onclick=()=>{if(!tanks.length){toast('กรุณาเพิ่มถังน้ำมันก่อน');return;}pinGate('เพิ่มหัวจ่าย','เพิ่มหัวจ่าย',()=>nozzleForm());};
+  const tn=id=>(S.tanks[id]||{}).name||'', nn=id=>(S.nozzles[id]||{}).name||'';
+  main.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>pinGate('แก้ไขถัง · '+tn(b.dataset.edit),'แก้ไข',()=>tankForm(b.dataset.edit)));
+  main.querySelectorAll('[data-dip]').forEach(b=>b.onclick=()=>pinGate('วัดน้ำมันในถัง · '+tn(b.dataset.dip),'แก้ไขระดับน้ำมันในถัง',()=>dipForm(b.dataset.dip)));
+  main.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const id=b.dataset.del;if(Object.values(S.nozzles).some(n=>n.tankId===id)){toast('กรุณาย้ายหรือลบหัวจ่ายของถังนี้ก่อน');return;}
+    pinGate('ลบถัง · '+tn(id),'ลบ',()=>{del('tanks',id);toast('ลบถังแล้ว');});});
+  main.querySelectorAll('[data-nedit]').forEach(b=>b.onclick=()=>pinGate('แก้ไขหัวจ่าย · '+nn(b.dataset.nedit),'แก้ไข',()=>nozzleForm(b.dataset.nedit)));
+  main.querySelectorAll('[data-ndel]').forEach(b=>b.onclick=()=>{const id=b.dataset.ndel;pinGate('ลบหัวจ่าย · '+nn(id),'ลบ',()=>{del('nozzles',id);toast('ลบหัวจ่ายแล้ว');});});
+}
+
+/* ---------- 2. meter readings ---------- */
+let mDate=today();const draft={};const unlocked=new Set();
+function draftFor(date){if(draft[date])return draft[date];const d={};
+  for(const [nid,n] of nozzlesSorted()){const ex=S.readings[date+'_'+nid];const t=S.tanks[n.tankId];
+    if(ex)d[nid]={open:ex.open,close:ex.close,price:ex.priceManual?ex.price:null};
+    else{const lr=lastReading(nid,date);d[nid]={open:lr?lr.close:(+n.initialMeter||0),close:'',price:null};}}
+  draft[date]=d;return d;}
+function renderMeters(main){
+  const noz=nozzlesSorted();
+  if(!noz.length){main.innerHTML=`<div class="sec-head"><div><h2>บันทึกเลขมิเตอร์</h2></div></div><div class="panel empty"><strong>ยังไม่มีหัวจ่ายให้บันทึก</strong>เพิ่มถังน้ำมันและหัวจ่ายที่เมนู "ตั้งค่าถังและหัวจ่าย" ก่อน</div>`;return;}
+  const d=draftFor(mDate);const saved=noz.some(([nid])=>S.readings[mDate+'_'+nid]);const locked=saved&&!unlocked.has(mDate);const dis=locked?' disabled':'';
+  const dates=[...new Set(Object.values(S.readings).map(r=>r.date))].sort().reverse().slice(0,21);
+  const byDate={};for(const r of Object.values(S.readings)){const x=byDate[r.date]||(byDate[r.date]={l:0,a:0});x.l+=+r.litres||0;x.a+=+r.amount||0;}
+  const dayP=n=>{const t=S.tanks[n.tankId];return t?priceOn(t.fuel,mDate):0;};
+  const effP=(nid,n)=>dayP(n);
+  const usedF=[...new Set(noz.map(([,n])=>(S.tanks[n.tankId]||{}).fuel).filter(Boolean))];
+  const hist=Object.values(S.dayprices).filter(x=>x&&x.date).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,14);
+  const strip=usedF.map(f=>{const i=priceInfo(f,mDate);const t=Object.values(S.tanks).find(x=>x.fuel===f)||{};
+    return `<span class="pchip"><i class="dot" style="background:${color(t.color)}"></i>${esc(f)} <b class="mono">${i.p.toFixed(2)}</b><small>${i.from===mDate?'ตั้งราคาวันนี้แล้ว':i.from?'ยกมาจาก '+esc(fdateShort(i.from)):'ราคาเริ่มต้น'}</small></span>`;}).join('');
+  main.innerHTML=`<div class="sec-head"><div><h2>บันทึกเลขมิเตอร์</h2><p>กรอกเลขมิเตอร์ปิดของแต่ละหัวจ่าย เลขเปิดดึงมาจากเลขปิดของวันก่อนหน้า ราคาขายดึงจากราคาประจำวันของวันนั้นโดยอัตโนมัติ (เปลี่ยนราคาได้ที่ปุ่ม "ตั้งราคาขายวันนี้") ระบบคำนวณลิตรที่ขายและยอดเงินให้</p></div></div>
+  <div class="layout-2"><section class="panel">
+    <div class="meter-bar"><label for="mDate">วันที่</label><input type="date" id="mDate" value="${mDate}"><button class="btn small ghost" id="mPrev" type="button" aria-label="วันก่อนหน้า">‹</button><button class="btn small ghost" id="mNext" type="button" aria-label="วันถัดไป">›</button>
+      ${saved?'<span class="chip good">บันทึกแล้ว</span>':'<span class="chip neutral">ยังไม่บันทึก</span>'}<span class="spacer"></span>${locked?`<button class="btn primary" id="mEdit" type="button">แก้ไขวัน${esc(fdateShort(mDate))}</button>`:`${saved?'<button class="btn ghost" id="mCancel" type="button">ยกเลิกการแก้ไข</button>':''}<button class="btn primary" id="mSave" type="button">บันทึกวัน${esc(fdateShort(mDate))}</button>`}</div>
+    <div class="price-strip"><span class="ps-l">ราคาขายวันที่ ${esc(fdateShort(mDate))}</span>${strip}<button class="btn small" id="mPrice" type="button">ตั้งราคาขายวันนี้</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>หัวจ่าย</th><th>ชนิดน้ำมัน</th><th class="r">เลขเปิด</th><th class="r">เลขปิด</th><th class="r">ลิตรที่ขาย</th><th class="r">ราคา / ลิตร</th><th class="r">ยอดขาย</th></tr></thead>
+    <tbody>${noz.map(([nid,n])=>{const t=S.tanks[n.tankId]||{};const r=d[nid];return `<tr data-row="${nid}"><td><strong>${esc(n.name)}</strong></td><td>${t.fuel?`<span class="fuel"><i class="dot" style="background:${color(t.color)}"></i>${esc(t.fuel)}</span>`:'<span class="chip bad">ยังไม่ผูกถัง</span>'}</td>
+      <td class="r"><input class="meter-in" type="number" step="0.01" id="o_${nid}" data-k="open" data-n="${nid}" value="${esc(r.open)}"${dis} aria-label="เลขเปิด ${esc(n.name)}"></td>
+      <td class="r"><input class="meter-in" type="number" step="0.01" id="c_${nid}" data-k="close" data-n="${nid}" value="${esc(r.close)}"${dis} placeholder="เลขปิด" aria-label="เลขปิด ${esc(n.name)}"></td>
+      <td class="calc" id="l_${nid}"></td>
+      <td class="r mono">${dayP(n).toFixed(2)}</td>
+      <td class="calc" id="a_${nid}"></td></tr>`;}).join('')}</tbody>
+    <tfoot><tr><td colspan="4">รวมทั้งวัน</td><td class="r mono" id="totL"></td><td></td><td class="r mono" id="totA"></td></tr></tfoot></table></div>
+    <div id="byFuel" style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 18px;border-top:1px solid var(--line);font-size:13px"></div>
+  </section>
+  <aside class="panel"><div class="panel-h">วันที่บันทึกแล้ว</div>${dates.length?`<ul class="daylist">${dates.map(x=>`<li><button type="button" data-day="${x}" class="${x===mDate?'on':''}"><span class="d">${esc(fdateShort(x))}</span><span class="x">${L(byDate[x].l)} ลิตร<br>${M0(byDate[x].a)}</span></button></li>`).join('')}</ul>`:'<div class="empty">ยังไม่มีวันที่บันทึก</div>'}
+    <div class="panel-h" style="border-top:1px solid var(--line)">ประวัติราคาขาย</div>${hist.length?`<ul class="daylist">${hist.map(x=>`<li><button type="button" data-pday="${x.date}"><span class="d">${esc(fdateShort(x.date))}</span><span class="x">${Object.entries(x.prices||{}).map(([f,p])=>esc(f)+' '+(+p).toFixed(2)).join('<br>')}</span></button></li>`).join('')}</ul>`:'<div class="empty">ยังไม่มีการตั้งราคารายวัน</div>'}</aside></div>`;
+  const recalc=()=>{let tl=0,ta=0;const fuel={};
+    for(const [nid,n] of noz){const r=d[nid];const lc=$('#l_'+nid),ac=$('#a_'+nid);
+      if(r.close===''||r.close==null){lc.textContent='–';ac.textContent='–';lc.classList.remove('err');continue;}
+      const lit=(+r.close)-(+r.open);const amt=lit*effP(nid,n);
+      if(lit<0){lc.textContent='เลขปิด < เลขเปิด';lc.classList.add('err');ac.textContent='–';continue;}
+      lc.classList.remove('err');lc.textContent=nL(lit);ac.textContent=M(amt);tl+=lit;ta+=amt;
+      const t=S.tanks[n.tankId]||{};const k=t.fuel||'อื่น ๆ';fuel[k]=fuel[k]||{l:0,c:t.color};fuel[k].l+=lit;}
+    $('#totL').textContent=nL(tl)+' ลิตร';$('#totA').textContent=M(ta);
+    $('#byFuel').innerHTML=Object.keys(fuel).length?Object.entries(fuel).map(([k,v])=>`<span class="fuel"><i class="dot" style="background:${color(v.c)}"></i>${esc(k)} <span class="mono">${nL(v.l)} ลิตร</span></span>`).join(''):'<span class="muted">กรอกเลขปิดเพื่อดูลิตรที่ขายแยกตามชนิดน้ำมัน</span>';};
+  recalc();
+  main.querySelectorAll('input[data-n]').forEach(inp=>inp.addEventListener('input',()=>{d[inp.dataset.n][inp.dataset.k]=inp.value;
+    if(inp.dataset.k==='price'){const n=S.nozzles[inp.dataset.n];inp.classList.toggle('override',inp.value!==''&&n&&+inp.value!==dayP(n));}recalc();}));
+  $('#mPrice').onclick=()=>pinGate('ตั้งราคาขายประจำวัน','เปลี่ยนราคาขาย',()=>priceForm(mDate));
+  main.querySelectorAll('[data-pday]').forEach(b=>b.onclick=()=>pinGate('ตั้งราคาขายประจำวัน','เปลี่ยนราคาขาย',()=>priceForm(b.dataset.pday)));
+  const go=x=>{if(!x)return;mDate=x;render(true);};
+  $('#mDate').onchange=e=>go(e.target.value);$('#mPrev').onclick=()=>go(addDays(mDate,-1));$('#mNext').onclick=()=>go(addDays(mDate,1));
+  main.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>go(b.dataset.day));
+  if($('#mEdit'))$('#mEdit').onclick=()=>pinGate('แก้ไขเลขมิเตอร์ · '+fdate(mDate),'แก้ไข',()=>{unlocked.add(mDate);render(true);});
+  if($('#mCancel'))$('#mCancel').onclick=()=>{unlocked.delete(mDate);delete draft[mDate];render(true);};
+  if($('#mSave'))$('#mSave').onclick=()=>{
+    for(const [nid,n] of noz){const r=d[nid];if(r.close!==''&&r.close!=null&&(+r.close)<(+r.open)){toast(n.name+': เลขปิดน้อยกว่าเลขเปิด');return;}}
+    pinGate('บันทึกเลขมิเตอร์ · '+fdate(mDate),'บันทึก',doSave);};
+  const doSave=async()=>{
+    for(const [nid,n] of noz){const r=d[nid];if(r.close!==''&&r.close!=null&&(+r.close)<(+r.open)){toast(n.name+': เลขปิดน้อยกว่าเลขเปิด');return;}}
+    let count=0;const date=mDate;
+    for(const [nid,n] of noz){const r=d[nid];const key=date+'_'+nid;const ex=S.readings[key];
+      if(r.close===''||r.close==null){if(ex){await del('readings',key);count++;}continue;}
+      const lit=Math.round(((+r.close)-(+r.open))*100)/100;const price=Math.round(effP(nid,n)*100)/100;
+      const manual=false;
+      const doc={date,nozzleId:nid,tankId:n.tankId,open:+r.open,close:+r.close,litres:lit,price,amount:Math.round(lit*price*100)/100,priceManual:manual};
+      if(ex&&ex.sample)doc.sample=true;
+      if(!ex||ex.open!==doc.open||ex.close!==doc.close||ex.price!==doc.price||ex.tankId!==doc.tankId||!!ex.priceManual!==manual){await put('readings',key,doc);count++;}}
+    delete draft[date];unlocked.delete(date);
+    Object.keys(draft).forEach(k=>{if(k>date)delete draft[k];});
+    toast(count?'บันทึกเลขมิเตอร์วันที่ '+fdate(date)+' แล้ว':'ไม่มีการเปลี่ยนแปลง');render(true);};
+}
+
+/* ---------- 3. orders ---------- */
+function orderForm(id){const o=id?S.orders[id]:null;const tanks=tanksSorted();if(!tanks.length){toast('กรุณาเพิ่มถังน้ำมันก่อน');return;}
+  openForm({title:o?'แก้ไขใบสั่งซื้อน้ำมัน':'สั่งซื้อน้ำมันใหม่',note:'เฉพาะใบสั่งซื้อที่สถานะ "รับแล้ว" เท่านั้นที่จะเพิ่มน้ำมันเข้าถัง ตามวันที่รับน้ำมัน',
+    fields:[{key:'date',label:'วันที่สั่ง',type:'date',required:true,default:today()},{key:'deliveryDate',label:'วันที่รับน้ำมัน',type:'date',default:today()},
+      {key:'tankId',label:'ถัง',type:'select',options:tanks.map(([tid,t])=>[tid,t.name+' · '+t.fuel+' (ที่ว่าง '+L(Math.max(0,(+t.capacity||0)-tankLevel(tid)))+' ลิตร)']),full:true},
+      {key:'litres',label:'จำนวนลิตร',type:'number',min:0,required:true},{key:'costPerLitre',label:'ต้นทุนต่อลิตร',type:'number',step:'0.0001',min:0,required:true},
+      {key:'supplier',label:'ผู้จำหน่าย',placeholder:'เช่น ปตท., บางจาก'},{key:'invoice',label:'เลขที่ใบกำกับ / ใบส่งของ'},
+      {key:'status',label:'สถานะ',type:'select',options:[['ordered','สั่งแล้ว · รอรับน้ำมัน'],['received','รับแล้ว']],default:'ordered',full:true}],
+    values:o||{},onSubmit:v=>{if(!v.deliveryDate)v.deliveryDate=v.date;v.total=Math.round(v.litres*v.costPerLitre*100)/100;const keep=o&&o.sample?{sample:true}:{};put('orders',id||'o'+uid(),{...keep,...v});}});}
+function renderOrders(main){
+  const list=Object.entries(S.orders).sort((a,b)=>(a[1].status===b[1].status?0:a[1].status==='ordered'?-1:1)||String(b[1].date).localeCompare(String(a[1].date)));
+  const pend=list.filter(x=>x[1].status!=='received');const pendL=pend.reduce((s,x)=>s+(+x[1].litres||0),0),pendV=pend.reduce((s,x)=>s+(+x[1].total||0),0);
+  let h=`<div class="sec-head"><div><h2>สั่งซื้อน้ำมัน</h2><p>บันทึกการสั่งซื้อแต่ละครั้งพร้อมราคา ${pend.length?`รอรับน้ำมัน <strong>${pend.length}</strong> รายการ: ${L(pendL)} ลิตร, ${M0(pendV)}`:'ไม่มีรายการรอรับน้ำมัน'}</p></div><button class="btn primary" id="addOrder" type="button">สั่งซื้อใหม่</button></div>`;
+  if(!list.length)h+=`<div class="panel empty"><strong>ยังไม่มีใบสั่งซื้อ</strong>บันทึกน้ำมันที่สั่งจากผู้จำหน่าย แล้วกด "รับน้ำมันแล้ว" เมื่อรถส่งน้ำมันมาถึง</div>`;
+  else h+=`<div class="panel tbl-wrap"><table><thead><tr><th>วันที่สั่ง</th><th>วันที่รับ</th><th>ถัง · ชนิดน้ำมัน</th><th>ผู้จำหน่าย</th><th class="r">ลิตร</th><th class="r">ต้นทุน / ลิตร</th><th class="r">รวมเงิน</th><th>สถานะ</th><th></th></tr></thead><tbody>${list.map(([id,o])=>{const t=S.tanks[o.tankId]||{};
+    return `<tr><td>${esc(fdate(o.date))}</td><td>${esc(fdate(delivDate(o)))}</td><td><span class="fuel"><i class="dot" style="background:${color(t.color)}"></i>${esc(t.name||'ถังที่ถูกลบ')} · ${esc(t.fuel||'')}</span></td><td>${esc(o.supplier||'–')}${o.invoice?`<div class="muted" style="font-size:12px">${esc(o.invoice)}</div>`:''}</td>
+      <td class="r mono">${L(o.litres)}</td><td class="r mono">${(+o.costPerLitre||0).toFixed(2)}</td><td class="r mono">${M(o.total)}</td>
+      <td>${o.status==='received'?'<span class="chip good">รับแล้ว</span>':'<span class="chip warn">สั่งแล้ว</span>'}</td>
+      <td><div class="row-actions">${o.status!=='received'?`<button class="btn small" data-recv="${id}" type="button">รับน้ำมันแล้ว</button>`:''}<button class="btn small" data-oedit="${id}" type="button">แก้ไข</button><button class="btn small danger" data-odel="${id}" type="button">ลบ</button></div></td></tr>`;}).join('')}</tbody></table></div>`;
+  main.innerHTML=h;
+  $('#addOrder').onclick=()=>orderForm();
+  main.querySelectorAll('[data-oedit]').forEach(b=>b.onclick=()=>orderForm(b.dataset.oedit));
+  main.querySelectorAll('[data-odel]').forEach(b=>armDelete(b,'ยืนยันการลบ',()=>del('orders',b.dataset.odel)));
+  main.querySelectorAll('[data-recv]').forEach(b=>b.onclick=()=>{const o=S.orders[b.dataset.recv];const t=S.tanks[o.tankId];
+    if(t&&tankLevel(o.tankId)+(+o.litres||0)>(+t.capacity||0))toast('โปรดตรวจสอบ: ปริมาณที่รับมากกว่าที่ว่างในถัง');
+    put('orders',b.dataset.recv,{...o,status:'received',deliveryDate:delivDate(o)>today()?today():delivDate(o)});});
+}
+
+/* ---------- 4. summary ---------- */
+let rng={preset:'month'};
+function presetRange(p){const t=today();const d=new Date(t+'T00:00:00');
+  if(p==='today')return [t,t];if(p==='7d')return [addDays(t,-6),t];if(p==='30d')return [addDays(t,-29),t];
+  if(p==='month')return [ymd(new Date(d.getFullYear(),d.getMonth(),1)),t];
+  if(p==='last'){return [ymd(new Date(d.getFullYear(),d.getMonth()-1,1)),ymd(new Date(d.getFullYear(),d.getMonth(),0))];}
+  return [rng.from||t,rng.to||t];}
+function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));for(const m of [1,1.5,2,2.5,3,4,5,6,8,10])if(m*p>=v)return m*p;return 10*p;}
+const short=n=>{const a=Math.abs(n);return a>=1e6?(n/1e6).toFixed(a>=1e7?0:1)+'M':a>=1e3?(n/1e3).toFixed(a>=1e4?0:1)+'k':String(Math.round(n));};
+function chart(days){
+  const n=days.length,W=760,pl=48,pr=10,pb=30,iw=W-pl-pr,bw=iw/n,rot=bw<52,pt=rot?44:22,H=rot?290:262,ih=H-pt-pb;
+  const max=niceMax(Math.max(1,...days.map(d=>d.rev)));const y=v=>pt+ih-ih*Math.max(0,v)/max;
+  const fmt=v=>bw>=110?Math.round(v).toLocaleString('en-US'):short(v);
+  const lbl=(cx,top,v,fill)=>rot
+    ?`<text x="${cx}" y="${top-4}" transform="rotate(-90 ${cx} ${top-4})" text-anchor="start" dominant-baseline="middle" font-size="10" font-weight="600" fill="${fill}" font-family="IBM Plex Mono,monospace">${fmt(v)}</text>`
+    :`<text x="${cx}" y="${top-5}" text-anchor="middle" font-size="11" font-weight="600" fill="${fill}" font-family="IBM Plex Mono,monospace">${fmt(v)}</text>`;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="ยอดขายและกำไรขั้นต้นรายวัน">`;
+  for(let i=0;i<=4;i++){const v=max*i/4,yy=y(v);s+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="var(--line)" stroke-width="1"/><text x="${pl-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${short(v)}</text>`;}
+  const every=Math.max(1,Math.ceil(n/12));
+  days.forEach((d,i)=>{const x=pl+i*bw;const gw=Math.max(1,bw*.36),gap=Math.max(0.5,bw*.04),x0=x+(bw-2*gw-gap)/2,x1=x0+gw+gap;
+    s+=`<g><title>${fdate(d.date)}: ยอดขาย ${M(d.rev)}, กำไร ${M(d.profit)}, ${L(d.l)} ลิตร</title>`;
+    if(d.rev>0)s+=`<rect x="${x0}" y="${y(d.rev)}" width="${gw}" height="${pt+ih-y(d.rev)}" rx="2" fill="var(--bar-rev)"/>`+lbl(x0+gw/2,y(d.rev),d.rev,'var(--muted)');
+    if(d.profit>0)s+=`<rect x="${x1}" y="${y(d.profit)}" width="${gw}" height="${pt+ih-y(d.profit)}" rx="2" fill="var(--accent)"/>`+lbl(x1+gw/2,y(d.profit),d.profit,'var(--accent-ink)');
+    s+=`<rect x="${x}" y="${pt}" width="${bw}" height="${ih}" fill="transparent"/></g>`;
+    if(i%every===0){const dd=new Date(d.date+'T00:00:00');s+=`<text x="${x+bw/2}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--muted)">${dd.getDate()} ${MON[dd.getMonth()]}</text>`;}});
+  s+=`<line x1="${pl}" x2="${W-pr}" y1="${pt+ih}" y2="${pt+ih}" stroke="var(--muted)" stroke-width="1"/></svg>`;return s;}
+const pl2=(v,l)=>l?(v/l).toFixed(2):'–';
+function renderSummary(main){
+  let [from,to]=presetRange(rng.preset);if(from>to)[from,to]=[to,from];
+  const rows=Object.values(S.readings).filter(r=>r.date>=from&&r.date<=to);
+  let tl=0,tr=0,tc=0;const byT={},byD={},byN={};
+  for(const r of rows){const c=(+r.litres||0)*avgCost(r.tankId,r.date);const a=+r.amount||0;tl+=+r.litres||0;tr+=a;tc+=c;
+    const tk=S.tanks[r.tankId]||{};const fk=tk.fuel||'ถังที่ถูกลบ';const t=byT[fk]||(byT[fk]={l:0,r:0,c:0,color:tk.color});t.l+=+r.litres||0;t.r+=a;t.c+=c;
+    const nz=byN[r.nozzleId]||(byN[r.nozzleId]={l:0,r:0,c:0,days:new Set(),tankId:r.tankId});nz.l+=+r.litres||0;nz.r+=a;nz.c+=c;nz.days.add(r.date);nz.tankId=r.tankId;
+    const d=byD[r.date]||(byD[r.date]={l:0,rev:0,cost:0});d.l+=+r.litres||0;d.rev+=a;d.cost+=c;}
+  const gp=tr-tc,mg=tr?gp/tr*100:0;
+  const purch=Object.values(S.orders).filter(o=>o.status==='received'&&delivDate(o)>=from&&delivDate(o)<=to);
+  const pL=purch.reduce((s,o)=>s+(+o.litres||0),0),pV=purch.reduce((s,o)=>s+(+o.total||0),0);
+  const days=[];const span=Math.round((new Date(to)-new Date(from))/864e5)+1;
+  if(span<=92){for(let x=from;x<=to;x=addDays(x,1)){const d=byD[x]||{l:0,rev:0,cost:0};days.push({date:x,l:d.l,rev:d.rev,profit:d.rev-d.cost});}}
+  else Object.keys(byD).sort().forEach(x=>{const d=byD[x];days.push({date:x,l:d.l,rev:d.rev,profit:d.rev-d.cost});});
+  const recDays=Object.keys(byD).length;
+  let crS=0,crL=0,crP=0;const crC={};const outAt={};
+  for(const x of Object.values(S.credits)){const c=crC[x.customerId]||(crC[x.customerId]={s:0,l:0,p:0});
+    if(x.date<=to){outAt[x.customerId]=(outAt[x.customerId]||0)+(x.type==='payment'?-(+x.amount||0):(+x.amount||0));}
+    if(x.date<from||x.date>to)continue;
+    if(x.type==='payment'){crP+=+x.amount||0;c.p+=+x.amount||0;}else{crS+=+x.amount||0;crL+=+x.litres||0;c.s+=+x.amount||0;c.l+=+x.litres||0;}}
+  const outTotal=Object.values(outAt).reduce((a,v)=>a+Math.max(0,v),0);
+  const cashSales=tr-crS,cashIn=cashSales+crP;
+  const crRows=Object.keys(S.customers).map(k=>({k,c:S.customers[k],...(crC[k]||{s:0,l:0,p:0}),out:outAt[k]||0})).filter(r=>r.s||r.p||Math.abs(r.out)>0.005).sort((a,b)=>b.out-a.out);
+  const creditBlock=`<section class="panel credit-sum"><div class="panel-h">เงินสดและสินเชื่อน้ำมัน</div>
+    <div class="cs-grid">
+      <div><div class="l">ขายเงินสด</div><div class="v">${M0(cashSales)}</div><div class="s">${tr?(cashSales/tr*100).toFixed(1):'0.0'}% ของยอดขาย</div></div>
+      <div><div class="l">ขายเงินเชื่อ</div><div class="v">${M0(crS)}</div><div class="s">${L(crL)} ลิตร · ${tr?(crS/tr*100).toFixed(1):'0.0'}% ของยอดขาย</div></div>
+      <div><div class="l">รับชำระสินเชื่อ</div><div class="v good">${M0(crP)}</div><div class="s">ในช่วงที่เลือก</div></div>
+      <div class="cs-hi"><div class="l">เงินเข้าจริง</div><div class="v">${M0(cashIn)}</div><div class="s">ขายเงินสด + รับชำระ</div></div>
+      <div><div class="l">ยอดค้างชำระ ณ ${esc(fdateShort(to))}</div><div class="v bad">${M0(outTotal)}</div><div class="s">${crRows.filter(r=>r.out>0.005).length} ราย</div></div>
+    </div>
+    ${tr&&crS?`<div class="cs-bar" role="img" aria-label="สัดส่วนเงินสดและเงินเชื่อ"><i style="width:${Math.max(0,cashSales/tr*100)}%" class="cash"></i><i style="width:${Math.min(100,crS/tr*100)}%" class="cred"></i></div><div class="cs-leg"><span><i class="cash"></i>เงินสด</span><span><i class="cred"></i>เงินเชื่อ</span></div>`:''}
+    ${crRows.length?`<div class="tbl-wrap"><table><thead><tr><th>ลูกค้า</th><th class="r">ลิตร</th><th class="r">เติมเชื่อ</th><th class="r">รับชำระ</th><th class="r">ค้างชำระ ณ สิ้นงวด</th></tr></thead><tbody>${crRows.map(r=>`<tr><td><strong>${esc(r.c.name)}</strong></td><td class="r mono">${r.l?L(r.l):'–'}</td><td class="r mono">${r.s?M0(r.s):'–'}</td><td class="r mono" style="color:var(--good)">${r.p?M0(r.p):'–'}</td><td class="r mono${r.c.limit>0&&r.out>r.c.limit?' plc neg':''}"><strong>${M0(r.out)}</strong></td></tr>`).join('')}</tbody><tfoot><tr><td>รวม</td><td class="r mono">${L(crL)}</td><td class="r mono">${M0(crS)}</td><td class="r mono">${M0(crP)}</td><td class="r mono">${M0(outTotal)}</td></tr></tfoot></table></div>`:'<div class="empty">ไม่มีรายการสินเชื่อในช่วงนี้</div>'}
+  </section>`;
+  const P=[['today','วันนี้'],['7d','7 วัน'],['month','เดือนนี้'],['last','เดือนที่แล้ว'],['30d','30 วัน'],['custom','กำหนดเอง']];
+  main.innerHTML=`<div class="sec-head"><div><h2>สรุปยอดขายและกำไร</h2><p>${esc(fdate(from))} – ${esc(fdate(to))} · บันทึกแล้ว ${recDays} วัน</p></div></div>
+  <div class="range"><div class="seg" role="group" aria-label="ช่วงเวลา">${P.map(([k,l])=>`<button type="button" data-p="${k}" class="${rng.preset===k?'on':''}">${l}</button>`).join('')}</div>
+    <input type="date" id="rFrom" value="${from}" aria-label="ตั้งแต่"><span class="muted">ถึง</span><input type="date" id="rTo" value="${to}" aria-label="ถึง"></div>
+  <div class="kpis">
+    <div class="panel kpi hero"><div class="l">กำไรขั้นต้น</div><div class="v">${M0(gp)}</div><div class="s">อัตรากำไร ${mg.toFixed(1)}% · ${tl?(gp/tl).toFixed(2):'0.00'} ต่อลิตร</div></div>
+    <div class="panel kpi"><div class="l">ยอดขาย</div><div class="v">${M0(tr)}</div><div class="s">${recDays?'เฉลี่ย '+M0(tr/recDays)+' ต่อวัน':'ยังไม่มียอดขาย'}</div></div>
+    <div class="panel kpi"><div class="l">ลิตรที่ขาย</div><div class="v">${L(tl)}</div><div class="s">${recDays?'เฉลี่ย '+L(tl/recDays)+' ลิตรต่อวัน':'–'}</div></div>
+    <div class="panel kpi"><div class="l">ต้นทุนน้ำมันที่ขาย</div><div class="v">${M0(tc)}</div><div class="s">ต้นทุนซื้อเฉลี่ยถ่วงน้ำหนัก</div></div>
+    <div class="panel kpi"><div class="l">ต้นทุนต่อลิตร</div><div class="v">${tl?(tc/tl).toFixed(2):'–'}</div><div class="s">${tl?esc(cur())+'/ลิตร · ราคาขายเฉลี่ย '+(tr/tl).toFixed(2):'ยังไม่มียอดขาย'}</div></div>
+    <div class="panel kpi pl${gp<0?' neg':''}"><div class="l">กำไรต่อลิตร</div><div class="v">${tl?(gp/tl).toFixed(2):'–'}</div><div class="s">${tl?esc(cur())+'/ลิตร · อัตรากำไร '+mg.toFixed(1)+'%':'ยังไม่มียอดขาย'}</div></div>
+    <div class="panel kpi"><div class="l">ซื้อน้ำมันเข้า</div><div class="v">${M0(pV)}</div><div class="s">รับเข้า ${L(pL)} ลิตร</div></div>
+  </div>
+  <section class="panel chart-box"><div class="legend"><span><i style="background:var(--bar-rev)"></i>ยอดขาย</span><span><i style="background:var(--accent)"></i>กำไรขั้นต้น</span></div>${days.length?chart(days):'<div class="empty">ไม่มีข้อมูลในช่วงนี้</div>'}</section>
+  ${creditBlock}
+  <div class="grid-2">
+    <section class="panel tbl-wrap"><div class="panel-h">แยกตามชนิดน้ำมัน</div>${Object.keys(byT).length?`<table><thead><tr><th>ชนิดน้ำมัน</th><th class="r">ลิตร</th><th class="r">ยอดขาย</th><th class="r">ต้นทุน</th><th class="r">กำไร</th><th class="r">ขาย / ลิตร</th><th class="r">ต้นทุน / ลิตร</th><th class="r">กำไร / ลิตร</th><th class="r">อัตรากำไร</th></tr></thead><tbody>${Object.entries(byT).sort((a,b)=>b[1].r-a[1].r).map(([fk,v])=>{const p=v.r-v.c;return `<tr><td><span class="fuel"><i class="dot" style="background:${color(v.color)}"></i>${esc(fk)}</span></td><td class="r mono">${L(v.l)}</td><td class="r mono">${M0(v.r)}</td><td class="r mono">${M0(v.c)}</td><td class="r mono">${M0(p)}</td><td class="r mono">${pl2(v.r,v.l)}</td><td class="r mono">${pl2(v.c,v.l)}</td><td class="r mono plc${p<0?' neg':''}">${pl2(p,v.l)}</td><td class="r mono">${v.r?(p/v.r*100).toFixed(1):'0.0'}%</td></tr>`;}).join('')}</tbody><tfoot><tr><td>รวม</td><td class="r mono">${L(tl)}</td><td class="r mono">${M0(tr)}</td><td class="r mono">${M0(tc)}</td><td class="r mono">${M0(gp)}</td><td class="r mono">${pl2(tr,tl)}</td><td class="r mono">${pl2(tc,tl)}</td><td class="r mono plc${gp<0?' neg':''}">${pl2(gp,tl)}</td><td class="r mono">${mg.toFixed(1)}%</td></tr></tfoot></table>`:'<div class="empty">ไม่มียอดขายในช่วงนี้</div>'}</section>
+    <section class="panel tbl-wrap"><div class="panel-h">แยกตามหัวจ่าย</div>${Object.keys(byN).length?`<table><thead><tr><th>หัวจ่าย</th><th>ถัง · ชนิดน้ำมัน</th><th class="r">ลิตร</th><th class="r">สัดส่วน</th><th class="r">เฉลี่ย / วัน</th><th class="r">ยอดขาย</th><th class="r">ต้นทุน</th><th class="r">กำไร</th><th class="r">กำไร / ลิตร</th></tr></thead><tbody>${Object.entries(byN).sort((a,b)=>{const na=S.nozzles[a[0]],nb=S.nozzles[b[0]];return (ordOf(na)-ordOf(nb))||(b[1].l-a[1].l);}).map(([nid,v])=>{const n=S.nozzles[nid];const t=S.tanks[v.tankId]||{};const p=v.r-v.c;const sh=tl?v.l/tl*100:0;
+      return `<tr><td><strong>${esc(n?n.name:'หัวจ่ายที่ถูกลบ')}</strong></td><td><span class="fuel"><i class="dot" style="background:${color(t.color)}"></i>${esc(t.name||'–')} · ${esc(t.fuel||'')}</span></td><td class="r mono">${L(v.l)}</td><td class="r"><span class="share"><span class="sb"><i style="width:${sh}%;background:${color(t.color)}"></i></span><span class="mono">${sh.toFixed(1)}%</span></span></td><td class="r mono">${L(v.l/v.days.size)}</td><td class="r mono">${M0(v.r)}</td><td class="r mono">${M0(v.c)}</td><td class="r mono">${M0(p)}</td><td class="r mono plc${p<0?' neg':''}">${pl2(p,v.l)}</td></tr>`;}).join('')}</tbody><tfoot><tr><td colspan="2">รวม</td><td class="r mono">${L(tl)}</td><td class="r mono">100%</td><td></td><td class="r mono">${M0(tr)}</td><td class="r mono">${M0(tc)}</td><td class="r mono">${M0(gp)}</td><td class="r mono plc${gp<0?' neg':''}">${pl2(gp,tl)}</td></tr></tfoot></table>`:'<div class="empty">ไม่มียอดขายในช่วงนี้</div>'}</section>
+    <section class="panel tbl-wrap"><div class="panel-h">แยกรายวัน</div>${recDays?`<table><thead><tr><th>วันที่</th><th class="r">ลิตร</th><th class="r">ยอดขาย</th><th class="r">ต้นทุน</th><th class="r">กำไร</th><th class="r">ต้นทุน / ลิตร</th><th class="r">กำไร / ลิตร</th></tr></thead><tbody>${Object.keys(byD).sort().reverse().map(x=>{const d=byD[x];const p=d.rev-d.cost;return `<tr><td>${esc(fdateShort(x))}</td><td class="r mono">${L(d.l)}</td><td class="r mono">${M0(d.rev)}</td><td class="r mono">${M0(d.cost)}</td><td class="r mono">${M0(p)}</td><td class="r mono">${pl2(d.cost,d.l)}</td><td class="r mono plc${p<0?' neg':''}">${pl2(p,d.l)}</td></tr>`;}).join('')}</tbody></table>`:'<div class="empty">ไม่มีวันที่บันทึกในช่วงนี้</div>'}</section>
+  </div>
+  <p class="foot-note">กำไรขั้นต้น = ยอดขาย − ต้นทุนน้ำมันที่ขาย ต้นทุนต่อลิตรใช้ค่าเฉลี่ยถ่วงน้ำหนักของน้ำมันที่รับเข้าทั้งหมดจนถึงวันนั้น ก่อนรับน้ำมันครั้งแรกจะใช้ต้นทุนอ้างอิงของถัง ยังไม่รวมค่าใช้จ่ายดำเนินงาน (ค่าแรง ค่าไฟ ฯลฯ)</p>`;
+  main.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{rng.preset=b.dataset.p;if(b.dataset.p==='custom'){rng.from=from;rng.to=to;}render(true);});
+  const setC=()=>{rng={preset:'custom',from:$('#rFrom').value||from,to:$('#rTo').value||to};render(true);};
+  $('#rFrom').onchange=setC;$('#rTo').onchange=setC;
+}
+/* ---------- Google Drive backup ---------- */
+const GD='Google Drive';
+let mcpNS=null,gdState='checking',gdBusy=false,gdErr='';
+const bk=()=>S.settings.backup||{};
+function dataSnapshot(){const o={};for(const c of COLS){o[c]={};for(const [k,v] of Object.entries(S[c]))if(!(c==='settings'&&k==='backup'))o[c][k]=v;}return o;}
+function hashStr(str){let h=5381;for(let i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))|0;return (h>>>0).toString(36);}
+function gdErrState(e){const c=e&&e.code;
+  if(c==='needs_reauth')return 'reauth';
+  if(c==='server_not_connected'||c==='server_not_found'||c==='selection_required')return 'disconnected';
+  if(c==='not_in_manifest'||c==='consent_required'||c==='approval_required')return 'denied';
+  if(c==='blocked_by_policy')return 'blocked';
+  if(c==='not_granted'||c==='capability_disabled'||c==='capability_removed')return 'unavailable';
+  return 'error';}
+async function gdInit(){let m=null;try{m=window.claude&&window.claude.use?await window.claude.use('mcp'):null;}catch(e){m=null;}
+  mcpNS=m;if(!m){gdState='unavailable';renderHeader();return;}
+  try{const r=await m.listTools(GD);const sv=(r.servers||[]).find(x=>x.server===GD);
+    gdState=!sv?'disconnected':sv.authStatus==='needs_reauth'?'reauth':sv.authStatus==='connected'?'connected':'unknown';}
+  catch(e){gdState=gdErrState(e);}
+  renderHeader();maybeAuto();}
+function maybeAuto(){
+  if(gdBusy||gdState!=='connected'||COLS.some(c=>!loaded.has(c)))return;const b=bk();if(b.auto===false)return;
+  const last=b.lastAt?new Date(b.lastAt):null;const hash=hashStr(JSON.stringify(dataSnapshot()));
+  if(!last||ymd(last)!==today())return backupNow('auto');
+  if(hash!==b.lastHash&&Date.now()-last.getTime()>3*3600e3)return backupNow('auto');}
+async function backupNow(reason){if(gdBusy||!mcpNS)return;gdBusy=true;gdErr='';renderHeader();renderGdPanel();
+  const mkFolder=async()=>{const r=await mcpNS.callTool(GD,'create_file',{title:'Gas Station Backup',contentMimeType:'application/vnd.google-apps.folder'});
+    const f=r&&r.payload||{};if(!f.id)throw {code:'tool_error',message:'สร้างโฟลเดอร์สำรองข้อมูลไม่สำเร็จ'};return {folderId:f.id,folderUrl:f.viewUrl||''};};
+  try{let b={...bk()};if(!b.folderId)Object.assign(b,await mkFolder());
+    const snap=dataSnapshot();const now=new Date();
+    const json=JSON.stringify({app:'gas-station-manager',format:1,exportedAt:now.toISOString(),station:(S.settings.main||{}).name||'',data:snap});
+    const title=`สำรองข้อมูลปั๊ม ${ymd(now)} ${pad(now.getHours())}.${pad(now.getMinutes())}.json`;
+    const send=()=>mcpNS.callTool(GD,'create_file',{title,parentId:b.folderId,textContent:json,contentMimeType:'application/json',disableConversionToGoogleType:true});
+    let r;try{r=await send();}catch(e){if(e&&e.code==='tool_error'){/* folder probably removed: make a new one and try once more (tool_error means nothing was written) */Object.assign(b,await mkFolder());r=await send();}else throw e;}
+    const f=r&&r.payload||{};
+    await put('settings','backup',{...b,auto:b.auto!==false,lastAt:now.toISOString(),lastFile:title,lastUrl:f.viewUrl||'',lastHash:hashStr(JSON.stringify(snap)),lastReason:reason,lastSize:json.length});
+    gdState='connected';if(reason!=='auto')toast('สำรองข้อมูลไปที่ Google Drive แล้ว');}
+  catch(e){gdState=gdErrState(e);gdErr=(e&&e.message)||'สำรองข้อมูลไม่สำเร็จ';
+    if(reason!=='auto')toast('สำรองข้อมูลไม่สำเร็จ: '+gdErr);}
+  finally{gdBusy=false;renderHeader();renderGdPanel();}}
+const gdWhen=iso=>{if(!iso)return '';const d=new Date(iso);return (ymd(d)===today()?'วันนี้':fdateShort(ymd(d)))+' '+pad(d.getHours())+':'+pad(d.getMinutes())+' น.';};
+function gdLabel(){const b=bk();
+  if(gdBusy)return {c:'busy',t:'กำลังสำรองข้อมูล…'};
+  return ({checking:{c:'busy',t:'กำลังตรวจสอบ…'},
+    connected:{c:'ok',t:b.lastAt?'สำรองล่าสุด '+gdWhen(b.lastAt):'เชื่อมต่อแล้ว · ยังไม่เคยสำรอง'},
+    unknown:{c:'warn',t:'รออนุญาตการเชื่อมต่อ'},disconnected:{c:'bad',t:'ยังไม่ได้เชื่อมต่อ'},reauth:{c:'bad',t:'ต้องเชื่อมต่อใหม่'},
+    denied:{c:'bad',t:'ไม่ได้รับอนุญาต'},blocked:{c:'bad',t:'องค์กรไม่อนุญาต'},unavailable:{c:'off',t:'ใช้ไม่ได้ในหน้านี้'},error:{c:'bad',t:'สำรองไม่สำเร็จ'}})[gdState]||{c:'off',t:''};}
+function renderGdPanel(){const dlg=$('#dlg');if(!dlg.open||!dlg.querySelector('#gdPanel'))return;openGdPanel(true);}
+function openGdPanel(refresh){const dlg=$('#dlg'),b=bk(),lb=gdLabel();
+  const fix={unknown:'กด "สำรองตอนนี้" แล้วกด "อนุญาต" ในหน้าต่างที่ขึ้นมา หลังจากนั้นระบบจะสำรองข้อมูลให้อัตโนมัติ',
+    disconnected:'ยังไม่ได้เชื่อม Google Drive กับบัญชี Claude ของคุณ ไปที่ claude.ai → Settings → Connectors แล้วเพิ่ม Google Drive จากนั้นเปิดหน้านี้ใหม่',
+    reauth:'การเชื่อมต่อ Google Drive หมดอายุ ไปที่ claude.ai → Settings → Connectors แล้วเชื่อมต่อ Google Drive ใหม่',
+    denied:'หน้านี้ยังไม่ได้รับอนุญาตให้ใช้ Google Drive กด "ตั้งค่าสิทธิ์" แล้วเปิดสิทธิ์ Google Drive',
+    blocked:'ผู้ดูแลองค์กรปิดการใช้งาน Google Drive สำหรับบัญชีนี้',
+    unavailable:'เปิดแอปนี้ผ่าน Claude เพื่อใช้การสำรองข้อมูลไป Google Drive',
+    error:gdErr||'ลองกด "สำรองตอนนี้" อีกครั้ง'}[gdState];
+  dlg.innerHTML=`<div id="gdPanel" style="padding:20px"><h2>สำรองข้อมูล Google Drive</h2>
+    <div class="gd-status"><span class="gd-dot ${lb.c}"></span><strong>${gdState==='connected'&&!gdBusy?'เชื่อมต่อแล้ว':esc(lb.t)}</strong></div>
+    ${fix?`<p class="note" style="margin-top:8px">${esc(fix)}</p>`:''}
+    <dl class="gd-dl">
+      <dt>สำรองล่าสุด</dt><dd>${b.lastAt?esc(gdWhen(b.lastAt))+(b.lastReason==='auto'?' (อัตโนมัติ)':' (กดสำรองเอง)'):'ยังไม่เคยสำรอง'}</dd>
+      ${b.lastFile?`<dt>ไฟล์</dt><dd>${b.lastUrl?`<a href="${esc(b.lastUrl)}" target="_blank" rel="noopener">${esc(b.lastFile)}</a>`:esc(b.lastFile)}</dd>`:''}
+      <dt>โฟลเดอร์</dt><dd>${b.folderUrl?`<a href="${esc(b.folderUrl)}" target="_blank" rel="noopener">Gas Station Backup</a>`:'Gas Station Backup (สร้างให้ตอนสำรองครั้งแรก)'}</dd>
+      <dt>ข้อมูลที่สำรอง</dt><dd>ถัง หัวจ่าย เลขมิเตอร์ ราคาขาย ใบสั่งซื้อ ลูกค้าสินเชื่อ และรายการสินเชื่อทั้งหมด (ไฟล์ JSON)</dd>
+    </dl>
+    <label class="gd-auto" for="gdAuto"><input type="checkbox" id="gdAuto"${b.auto!==false?' checked':''}> สำรองอัตโนมัติ <span class="muted">· วันละครั้งเมื่อเปิดแอป และทุก 3 ชั่วโมงถ้ามีข้อมูลเปลี่ยน</span></label>
+    <div class="dlg-actions">${gdState==='denied'?'<button type="button" class="btn" id="gdPerm">ตั้งค่าสิทธิ์</button>':''}<button type="button" class="btn ghost" id="gdClose">ปิด</button>
+      <button type="button" class="btn primary" id="gdNow"${gdBusy||!mcpNS||['disconnected','blocked','unavailable'].includes(gdState)?' disabled':''}>${gdBusy?'กำลังสำรอง…':'สำรองตอนนี้'}</button></div></div>`;
+  $('#gdClose').onclick=()=>dlg.close();
+  $('#gdNow').onclick=()=>backupNow('manual');
+  $('#gdAuto').onchange=e=>{put('settings','backup',{...bk(),auto:e.target.checked});toast(e.target.checked?'เปิดสำรองอัตโนมัติแล้ว':'ปิดสำรองอัตโนมัติแล้ว');};
+  if($('#gdPerm'))$('#gdPerm').onclick=async()=>{try{const p=await window.claude.use('permissions');if(p)await p.manage();}catch(e){toast('เปิดเมนู Permissions ของหน้านี้เพื่อเปิดสิทธิ์ Google Drive');}gdInit();};
+  if(!refresh||!dlg.open)dlg.showModal();}
+gdInit();setInterval(()=>{maybeAuto();renderHeader();},30*60*1000);
+$('#gdPill').onclick=()=>mode==='drive'?openDrivePanel():openGdPanel();
+render();
+})();
+</script>
+</body>
+</html>
