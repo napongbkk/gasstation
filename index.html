@@ -330,7 +330,7 @@ dialog .note{color:var(--muted);margin:0 0 12px;font-size:13px}
 <div class="wrap" lang="th">
   <header class="sign">
     <div class="brand"><span class="eyebrow">ระบบจัดการปั๊มน้ำมัน</span><h1 id="stName">ปั๊มน้ำมัน</h1></div>
-    <div class="sign-tools"><button class="btn-sign gd-pill" id="gdPill" type="button" aria-label="สถานะการสำรองข้อมูล Google Drive"></button><button class="btn-sign" id="btnSettings" type="button">ตั้งค่าสถานี</button></div>
+    <div class="sign-tools"><button class="btn-sign gd-pill" id="gdPill" type="button" aria-label="สถานะการเชื่อมต่อข้อมูล"></button><button class="btn-sign" id="btnSettings" type="button">ตั้งค่าสถานี</button></div>
   </header>
   <div id="banner"></div>
   <nav class="tabs" role="tablist" id="tabs">
@@ -400,107 +400,105 @@ function errMsg(e){if(!e)return 'เกิดข้อผิดพลาด';if(
 async function put(c,id,data){S[c]={...S[c],[id]:data};render();try{if(db)await db.collection(c).doc(id).set(data);else{saveLocal();trackChange(c,id,data);}}catch(e){toast(errMsg(e));}}
 async function del(c,id){const n={...S[c]};delete n[id];S[c]=n;render();try{if(db)await db.collection(c).doc(id).delete();else{saveLocal();trackChange(c,id,null);}}catch(e){toast(errMsg(e));}}
 
-/* ---------- Standalone (Vercel): Google Drive is the data store ----------
-   Data lives in one JSON file "gas-station-data.json" inside the Drive folder "Gas Station Manager".
-   Every save downloads the current file, applies only the records changed on this device, then uploads,
-   so two devices editing different records don't overwrite each other. A dated copy is kept once a day. */
+/* ---------- Standalone (Vercel): Google Sheets is the data store ----------
+   The app talks to a small Apps Script web app bound to the user's Google Sheet (see apps-script/Code.gs).
+   Changes are sent as a list of edited records; the script merges them under a lock, so several devices can work at once. */
 const CFG=window.GSM_CONFIG||{};
-const DV={token:null,exp:0,fileId:null,folderId:null,modified:null,state:'signedout',saving:false,lastSaved:null,err:'',client:null,changes:{},timer:null};
-const DRIVE_FILE='gas-station-data.json',DRIVE_FOLDER='Gas Station Manager';
+const SH={url:'',key:'',state:'setup',saving:false,lastSaved:null,err:'',changes:{},timer:null,rev:null,sheetUrl:''};
 const SEP='\u0001';
-function savePending(){try{localStorage.setItem('gsm-pending',JSON.stringify(DV.changes));}catch(e){}}
-function trackChange(c,id,data){if(mode!=='drive')return;DV.changes[c+SEP+id]=data===undefined?null:data;savePending();scheduleSave();}
-function scheduleSave(){clearTimeout(DV.timer);DV.timer=setTimeout(()=>{if(DV.token&&DV.fileId)driveSave();else{DV.state=DV.state==='signedout'?'signedout':'reauth';renderHeader();}},1200);}
-function loadGis(){return new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();
-  const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>res();s.onerror=()=>rej(new Error('โหลดระบบลงชื่อเข้าใช้ Google ไม่สำเร็จ'));document.head.appendChild(s);});}
-async function driveSignIn(){await loadGis();return new Promise((res,rej)=>{
-  DV.client=google.accounts.oauth2.initTokenClient({client_id:CFG.googleClientId,scope:'https://www.googleapis.com/auth/drive.file',
-    callback:r=>{if(r.error)return rej(new Error(r.error_description||r.error));DV.token=r.access_token;DV.exp=Date.now()+((+r.expires_in||3600)-60)*1000;try{localStorage.setItem('gsm-drive-ok','1');}catch(_){}res();},
-    error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'หน้าต่างลงชื่อเข้าใช้ถูกปิดก่อนเสร็จ':e&&e.type==='popup_failed_to_open'?'เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป กรุณาอนุญาตป๊อปอัปแล้วลองใหม่':'ลงชื่อเข้าใช้ไม่สำเร็จ'))});
-  DV.client.requestAccessToken({prompt:''});});}
-async function gapi(path,opt={}){
-  if(!DV.token||Date.now()>DV.exp){DV.token=null;DV.state='reauth';renderHeader();throw new Error('reauth');}
-  const r=await fetch('https://www.googleapis.com/'+path,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+DV.token}});
-  if(r.status===401){DV.token=null;DV.state='reauth';renderHeader();throw new Error('reauth');}
-  if(!r.ok){let m='';try{m=(await r.json()).error.message;}catch(_){}throw new Error(m||('Google Drive ตอบกลับ '+r.status));}
-  return r;}
-const q=s=>encodeURIComponent(s);
-async function driveLocate(){
-  let j=await (await gapi(`drive/v3/files?q=${q(`name='${DRIVE_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`)}&fields=files(id)&spaces=drive`)).json();
-  DV.folderId=j.files&&j.files[0]?j.files[0].id:(await (await gapi('drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json()).id;
-  j=await (await gapi(`drive/v3/files?q=${q(`name='${DRIVE_FILE}' and '${DV.folderId}' in parents and trashed=false`)}&fields=files(id,modifiedTime)&spaces=drive`)).json();
-  if(j.files&&j.files[0]){DV.fileId=j.files[0].id;DV.modified=j.files[0].modifiedTime;return true;}return false;}
+function shCfgLoad(){try{const o=JSON.parse(localStorage.getItem('gsm-sheet')||'{}');SH.url=o.url||CFG.sheetApiUrl||'';SH.key=o.key||'';SH.sheetUrl=o.sheetUrl||'';}catch(_){SH.url=CFG.sheetApiUrl||'';}}
+function shCfgSave(){try{localStorage.setItem('gsm-sheet',JSON.stringify({url:SH.url,key:SH.key,sheetUrl:SH.sheetUrl}));}catch(_){}}
+function savePending(){try{localStorage.setItem('gsm-pending',JSON.stringify(SH.changes));}catch(e){}}
+function trackChange(c,id,data){if(mode!=='sheet')return;SH.changes[c+SEP+id]=data===undefined?null:data;savePending();scheduleSave();}
+function scheduleSave(){clearTimeout(SH.timer);SH.timer=setTimeout(()=>{if(SH.state==='saved'||SH.state==='error')shSave();else renderHeader();},900);}
 const allData=()=>Object.fromEntries(COLS.map(c=>[c,S[c]]));
-const fileBody=data=>JSON.stringify({app:'gas-station-manager',format:1,savedAt:new Date().toISOString(),data});
-async function driveRead(){const o=await (await gapi(`drive/v3/files/${DV.fileId}?alt=media`)).json();return o&&o.data?o.data:(o||{});}
-async function driveWrite(data){const j=await (await gapi(`upload/drive/v3/files/${DV.fileId}?uploadType=media&fields=modifiedTime`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:fileBody(data)})).json();DV.modified=j.modifiedTime;DV.lastSaved=new Date();}
-async function driveCreate(){const b='gsm'+Date.now(),meta={name:DRIVE_FILE,parents:[DV.folderId],mimeType:'application/json'};
-  const body=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${fileBody(allData())}\r\n--${b}--`;
-  const j=await (await gapi('upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body})).json();
-  DV.fileId=j.id;DV.modified=j.modifiedTime;DV.lastSaved=new Date();}
-function applyData(data){COLS.forEach(c=>S[c]=data[c]||{});saveLocal();}
-async function driveSave(){if(DV.saving||!DV.fileId)return;const ch=DV.changes;if(!Object.keys(ch).length)return;
-  DV.saving=true;DV.changes={};DV.state='saving';renderHeader();
-  try{const data=await driveRead();
-    for(const [k,v] of Object.entries(ch)){const [c,id]=k.split(SEP);data[c]=data[c]||{};if(v===null)delete data[c][id];else data[c][id]=v;}
-    await driveWrite(data);applyData(data);savePending();DV.state='saved';DV.err='';render();driveDailyCopy();}
-  catch(e){DV.changes={...ch,...DV.changes};savePending();if(e.message!=='reauth'){DV.state='error';DV.err=e.message;}}
-  finally{DV.saving=false;renderHeader();if(Object.keys(DV.changes).length&&DV.state==='saved')scheduleSave();}}
-async function driveRefresh(){/* pull other devices' changes when nothing is waiting to be saved here */
-  if(mode!=='drive'||!DV.token||!DV.fileId||DV.saving||Object.keys(DV.changes).length||Date.now()>DV.exp)return;
-  try{const m=await (await gapi(`drive/v3/files/${DV.fileId}?fields=modifiedTime`)).json();
-    if(m.modifiedTime!==DV.modified){applyData(await driveRead());DV.modified=m.modifiedTime;render();}}catch(e){}}
-async function driveDailyCopy(){const td=today();let last='';try{last=localStorage.getItem('gsm-last-copy')||'';}catch(_){}
-  if(last===td||!DV.fileId)return;
-  try{await gapi(`drive/v3/files/${DV.fileId}/copy?fields=id`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:`สำรองข้อมูลปั๊ม ${td}.json`,parents:[DV.folderId]})});
-    try{localStorage.setItem('gsm-last-copy',td);}catch(_){}}catch(e){}}
-async function driveConnect(){if(!CFG.googleClientId){toast('ยังไม่ได้ตั้งค่า Google Client ID ในไฟล์ config.js');return;}
-  try{DV.state='connecting';renderHeader();await driveSignIn();
-    if(await driveLocate()){applyData(await driveRead());if(Object.keys(DV.changes).length){DV.state='saved';await driveSave();}}
-    else await driveCreate();
-    DV.state='saved';DV.lastSaved=DV.lastSaved||new Date(DV.modified);DV.err='';render();driveDailyCopy();toast('เชื่อมต่อ Google Drive แล้ว');}
-  catch(e){if(e.message!=='reauth'){DV.state='error';DV.err=e.message;}renderHeader();toast('เชื่อมต่อ Google Drive ไม่สำเร็จ: '+e.message);}}
-async function driveReplaceAll(data){applyData(data);DV.changes={};savePending();render();
-  if(DV.token&&DV.fileId){DV.state='saving';renderHeader();try{await driveWrite(allData());DV.state='saved';toast('นำเข้าข้อมูลและบันทึกลง Google Drive แล้ว');}catch(e){if(e.message!=='reauth'){DV.state='error';DV.err=e.message;}}renderHeader();}
-  else toast('นำเข้าข้อมูลแล้ว จะบันทึกลง Google Drive เมื่อเชื่อมต่อ');}
-function driveBoot(){mode='drive';loadLocal();try{DV.changes=JSON.parse(localStorage.getItem('gsm-pending')||'{}')||{};}catch(_){DV.changes={};}
-  let seen=false;try{seen=!!localStorage.getItem('gsm-drive-ok');}catch(_){}
-  DV.state=seen?'reauth':'signedout';COLS.forEach(c=>loaded.add(c));render();
-  setInterval(driveRefresh,60000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')driveRefresh();});}
-function driveLabel(){const n=Object.keys(DV.changes).length;
-  return ({signedout:{c:'bad',t:'ยังไม่ได้เชื่อมต่อ'},reauth:{c:'warn',t:n?`มี ${n} รายการรอบันทึก · กดเพื่อเชื่อมต่อ`:'กดเพื่อเชื่อมต่อ'},
-    connecting:{c:'busy',t:'กำลังเชื่อมต่อ…'},saving:{c:'busy',t:'กำลังบันทึก…'},
-    saved:{c:'ok',t:n?'มีข้อมูลรอบันทึก':DV.lastSaved?'บันทึกแล้ว '+pad(DV.lastSaved.getHours())+':'+pad(DV.lastSaved.getMinutes())+' น.':'เชื่อมต่อแล้ว'},
-    error:{c:'bad',t:'บันทึกไม่สำเร็จ'}})[DV.state]||{c:'off',t:''};}
-function openDrivePanel(){const dlg=$('#dlg'),lb=driveLabel(),n=Object.keys(DV.changes).length;
-  dlg.innerHTML=`<div style="padding:20px"><h2>ข้อมูลใน Google Drive</h2>
+function applyData(data){COLS.forEach(c=>S[c]={...(data[c]||{})});
+  for(const [k,v] of Object.entries(SH.changes)){const [c,id]=k.split(SEP);if(!S[c])continue;if(v===null)delete S[c][id];else S[c][id]=v;}
+  saveLocal();}
+async function shApi(action,extra){
+  let r;try{r=await fetch(SH.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:SH.key,action,...(extra||{})})});}
+  catch(e){throw new Error('ติดต่อ Google Sheets ไม่ได้ ตรวจสอบอินเทอร์เน็ต หรือว่าตั้ง Who has access เป็น Anyone แล้ว');}
+  if(!r.ok)throw new Error('Google Sheets ตอบกลับ '+r.status);
+  let j;try{j=await r.json();}catch(_){throw new Error('ลิงก์นี้ไม่ใช่ API ของแอป ใช้ลิงก์ Web app ที่ลงท้ายด้วย /exec');}
+  if(!j.ok){const e=new Error({wrong_key:'รหัสเข้าใช้งานไม่ถูกต้อง',key_too_short:'รหัสเข้าใช้งานต้องมีอย่างน้อย 4 ตัวอักษร'}[j.error]||j.error||'เกิดข้อผิดพลาด');e.code=j.error;throw e;}
+  return j;}
+async function shConnect(url,key){SH.url=String(url||'').trim();SH.key=String(key||'').trim();SH.state='connecting';SH.err='';renderHeader();
+  try{const j=await shApi('load');SH.rev=j.rev;SH.sheetUrl=j.sheetUrl||'';shCfgSave();
+    const remoteEmpty=!Object.values(j.data||{}).some(o=>o&&Object.keys(o).length);
+    const localHas=COLS.some(c=>Object.keys(S[c]).length);
+    if(remoteEmpty&&localHas){const r=await shApi('replace',{data:allData()});SH.changes={};savePending();SH.rev=r.rev;applyData(r.data);}
+    else applyData(j.data||{});
+    SH.state='saved';SH.lastSaved=new Date();render();
+    if(Object.keys(SH.changes).length)shSave();
+    return true;}
+  catch(e){SH.state=e.code==='wrong_key'||!SH.rev?'setup':'error';SH.err=e.message;renderHeader();return e.message;}}
+async function shSave(){if(SH.saving)return;const ch=SH.changes;const list=Object.entries(ch).map(([k,v])=>{const [c,id]=k.split(SEP);return {c,id,data:v};});
+  if(!list.length){SH.state='saved';renderHeader();return;}
+  SH.saving=true;SH.changes={};SH.state='saving';renderHeader();
+  try{const j=await shApi('save',{changes:list});SH.rev=j.rev;applyData(j.data);savePending();SH.lastSaved=new Date();SH.state='saved';SH.err='';render();}
+  catch(e){SH.changes={...ch,...SH.changes};savePending();SH.state='error';SH.err=e.message;}
+  finally{SH.saving=false;renderHeader();if(Object.keys(SH.changes).length&&SH.state==='saved')scheduleSave();}}
+async function shRefresh(){if(mode!=='sheet'||!SH.url||!SH.key||SH.saving)return;
+  if(Object.keys(SH.changes).length){if(SH.state==='error'||SH.state==='saved')shSave();return;}
+  if(SH.state!=='saved')return;
+  try{const j=await shApi('rev');if(j.rev!==SH.rev){const l=await shApi('load');SH.rev=l.rev;applyData(l.data||{});render();}}catch(e){}}
+async function shReplaceAll(data){SH.changes={};savePending();applyData(data);render();
+  if(SH.state==='saved'){SH.state='saving';renderHeader();try{const r=await shApi('replace',{data:allData()});SH.rev=r.rev;applyData(r.data);SH.state='saved';SH.lastSaved=new Date();render();toast('นำเข้าข้อมูลและบันทึกลง Google Sheets แล้ว');}
+    catch(e){SH.state='error';SH.err=e.message;toast('นำเข้าแล้ว แต่บันทึกลง Google Sheets ไม่สำเร็จ: '+e.message);}renderHeader();}
+  else toast('นำเข้าข้อมูลแล้ว จะบันทึกลง Google Sheets เมื่อเชื่อมต่อ');}
+function sheetBoot(){mode='sheet';loadLocal();try{SH.changes=JSON.parse(localStorage.getItem('gsm-pending')||'{}')||{};}catch(_){SH.changes={};}
+  shCfgLoad();COLS.forEach(c=>loaded.add(c));render();
+  if(SH.url&&SH.key)shConnect(SH.url,SH.key);
+  setInterval(shRefresh,45000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')shRefresh();});}
+function sheetLabel(){const n=Object.keys(SH.changes).length;
+  return ({setup:{c:'bad',t:'ยังไม่ได้เชื่อมต่อ'},connecting:{c:'busy',t:'กำลังเชื่อมต่อ…'},saving:{c:'busy',t:'กำลังบันทึก…'},
+    saved:{c:n?'warn':'ok',t:n?`รอบันทึก ${n} รายการ`:SH.lastSaved?'บันทึกแล้ว '+pad(SH.lastSaved.getHours())+':'+pad(SH.lastSaved.getMinutes())+' น.':'เชื่อมต่อแล้ว'},
+    error:{c:'bad',t:n?`บันทึกไม่สำเร็จ · รอ ${n} รายการ`:'เชื่อมต่อไม่สำเร็จ'}})[SH.state]||{c:'off',t:''};}
+function openSheetSetup(){const dlg=$('#dlg');
+  dlg.innerHTML=`<form id="shForm" novalidate style="padding:20px"><h2>เชื่อมต่อ Google Sheets</h2>
+    <p class="note">ใส่ลิงก์ Web app ที่ได้จาก Apps Script ใน Google Sheet ของคุณ (ดูขั้นตอนใน README) ข้อมูลทั้งหมดจะบันทึกลงชีตนั้น</p>
+    <div class="fgrid"><label class="full" for="f_shUrl">ลิงก์ Web app (ลงท้ายด้วย /exec)<input id="f_shUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(SH.url)}"></label>
+      <label class="full" for="f_shKey">รหัสเข้าใช้งาน<input id="f_shKey" type="password" autocomplete="off" value="${esc(SH.key)}" placeholder="อย่างน้อย 4 ตัวอักษร"></label></div>
+    <p class="note" style="margin-top:8px">ครั้งแรกที่เชื่อมต่อ ระบบจะจำรหัสนี้ไว้ เครื่องอื่นต้องใช้รหัสเดียวกัน</p>
+    <p class="form-err" id="formErr">${SH.err&&SH.state!=='saved'?esc(SH.err):''}</p>
+    <div class="dlg-actions"><button type="button" class="btn ghost" id="dlgCancel">ยกเลิก</button><button type="submit" class="btn primary" id="shGo">เชื่อมต่อ</button></div></form>`;
+  $('#dlgCancel').onclick=()=>dlg.close();
+  $('#shForm').onsubmit=async e=>{e.preventDefault();const u=$('#f_shUrl').value.trim(),k=$('#f_shKey').value.trim();
+    if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(u)){$('#formErr').textContent='ลิงก์ต้องขึ้นต้นด้วย https://script.google.com/';return;}
+    if(k.length<4){$('#formErr').textContent='รหัสเข้าใช้งานต้องมีอย่างน้อย 4 ตัวอักษร';return;}
+    $('#shGo').disabled=true;$('#shGo').textContent='กำลังเชื่อมต่อ…';const r=await shConnect(u,k);
+    if(r===true){dlg.close();toast('เชื่อมต่อ Google Sheets แล้ว');}else{$('#formErr').textContent=r;$('#shGo').disabled=false;$('#shGo').textContent='เชื่อมต่อ';}};
+  dlg.showModal();}
+function openSheetPanel(){if(!SH.url||!SH.key||SH.state==='setup'){openSheetSetup();return;}
+  const dlg=$('#dlg'),lb=sheetLabel(),n=Object.keys(SH.changes).length;
+  dlg.innerHTML=`<div style="padding:20px"><h2>ข้อมูลใน Google Sheets</h2>
     <div class="gd-status"><span class="gd-dot ${lb.c}"></span><strong>${esc(lb.t)}</strong></div>
-    ${DV.err&&DV.state==='error'?`<p class="note" style="margin-top:8px;color:var(--bad)">${esc(DV.err)}</p>`:''}
-    ${!CFG.googleClientId?'<p class="note" style="margin-top:8px;color:var(--bad)">ยังไม่ได้ใส่ Google Client ID ในไฟล์ config.js (ดูวิธีใน README)</p>':''}
+    ${SH.err&&SH.state==='error'?`<p class="note" style="margin-top:8px;color:var(--bad)">${esc(SH.err)}</p>`:''}
     <dl class="gd-dl">
-      <dt>ที่เก็บข้อมูล</dt><dd>${DV.folderId?`<a href="https://drive.google.com/drive/folders/${esc(DV.folderId)}" target="_blank" rel="noopener">โฟลเดอร์ ${esc(DRIVE_FOLDER)}</a>`:esc(DRIVE_FOLDER)} · ไฟล์ ${esc(DRIVE_FILE)}</dd>
-      <dt>บันทึกล่าสุด</dt><dd>${DV.lastSaved?esc(fdate(ymd(DV.lastSaved)))+' '+pad(DV.lastSaved.getHours())+':'+pad(DV.lastSaved.getMinutes())+' น.':'–'}</dd>
+      <dt>ชีตข้อมูล</dt><dd>${SH.sheetUrl?`<a href="${esc(SH.sheetUrl)}" target="_blank" rel="noopener">เปิด Google Sheet</a>`:'–'}</dd>
+      <dt>บันทึกล่าสุด</dt><dd>${SH.lastSaved?esc(fdate(ymd(SH.lastSaved)))+' '+pad(SH.lastSaved.getHours())+':'+pad(SH.lastSaved.getMinutes())+' น.':'–'}</dd>
       <dt>รอบันทึก</dt><dd>${n?n+' รายการ (เก็บไว้ในเครื่องนี้จนกว่าจะบันทึกสำเร็จ)':'ไม่มี'}</dd>
-      <dt>สำรองรายวัน</dt><dd>ทุกวันระบบจะคัดลอกไฟล์ข้อมูลไว้ 1 ชุดในโฟลเดอร์เดียวกัน</dd>
+      <dt>ประวัติ/สำรอง</dt><dd>ดูหรือย้อนข้อมูลเก่าได้จาก File → Version history ใน Google Sheet</dd>
     </dl>
     <label class="gd-auto" for="dvImport">นำเข้าไฟล์สำรอง (.json) แทนข้อมูลทั้งหมด <input type="file" id="dvImport" accept=".json,application/json"></label>
-    <div class="dlg-actions"><button type="button" class="btn ghost" id="dvClose">ปิด</button>
-      ${DV.token?`<button type="button" class="btn" id="dvReload">โหลดข้อมูลล่าสุด</button><button type="button" class="btn primary" id="dvSave"${n?'':' disabled'}>บันทึกตอนนี้</button>`:`<button type="button" class="btn primary" id="dvConn">เชื่อมต่อ Google Drive</button>`}</div></div>`;
+    <div class="dlg-actions"><button type="button" class="btn ghost" id="shSet">เปลี่ยนการเชื่อมต่อ</button><span style="flex:1"></span><button type="button" class="btn ghost" id="dvClose">ปิด</button>
+      <button type="button" class="btn" id="dvReload">โหลดข้อมูลล่าสุด</button><button type="button" class="btn primary" id="dvSave"${n?'':' disabled'}>บันทึกตอนนี้</button></div></div>`;
   $('#dvClose').onclick=()=>dlg.close();
-  if($('#dvConn'))$('#dvConn').onclick=()=>{dlg.close();driveConnect();};
-  if($('#dvSave'))$('#dvSave').onclick=()=>{dlg.close();driveSave();};
-  if($('#dvReload'))$('#dvReload').onclick=()=>{dlg.close();if(Object.keys(DV.changes).length){toast('มีข้อมูลรอบันทึก กรุณาบันทึกก่อน');return;}DV.modified=null;driveRefresh().then(()=>toast('โหลดข้อมูลล่าสุดแล้ว'));};
+  $('#shSet').onclick=()=>pinGate('เปลี่ยนการเชื่อมต่อ Google Sheets','เปลี่ยนการเชื่อมต่อ',openSheetSetup);
+  $('#dvSave').onclick=()=>{dlg.close();shSave();};
+  $('#dvReload').onclick=async()=>{dlg.close();if(Object.keys(SH.changes).length){toast('มีข้อมูลรอบันทึก กรุณาบันทึกก่อน');return;}
+    try{const l=await shApi('load');SH.rev=l.rev;applyData(l.data||{});render();toast('โหลดข้อมูลล่าสุดแล้ว');}catch(e){toast(e.message);}};
   $('#dvImport').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();
     rd.onload=()=>{let o;try{o=JSON.parse(rd.result);}catch(_){toast('ไฟล์ไม่ใช่ข้อมูลสำรองที่ถูกต้อง');return;}const data=o&&o.data?o.data:o;
-      if(!data||typeof data!=='object'||!data.tanks){toast('ไฟล์นี้ไม่มีข้อมูลถังน้ำมัน ไม่ใช่ไฟล์สำรองของแอปนี้');return;}
-      pinGate('นำเข้าข้อมูลจากไฟล์สำรอง','แทนที่ข้อมูลทั้งหมด',()=>driveReplaceAll(data));};rd.readAsText(f);};
+      if(!data||typeof data!=='object'||!data.tanks){toast('ไฟล์นี้ไม่ใช่ไฟล์สำรองของแอปนี้');return;}
+      pinGate('นำเข้าข้อมูลจากไฟล์สำรอง','แทนที่ข้อมูลทั้งหมด',()=>shReplaceAll(data));};rd.readAsText(f);};
   dlg.showModal();}
 (async()=>{
   let d=null;
   try{d=window.claude&&window.claude.use?await window.claude.use('db'):null;}catch(e){d=null;}
   if(d){db=d;mode='db';
     COLS.forEach(c=>{db.collection(c).onSnapshot(snap=>{const o={};snap.docs.forEach(x=>{o[x.id]=x.data();});S[c]=o;loaded.add(c);render();},err=>{loaded.add(c);toast('โหลดข้อมูล'+COLNAME[c]+'ไม่สำเร็จ กรุณาโหลดหน้าใหม่');render();});});
-  }else setTimeout(driveBoot,0);
+  }else setTimeout(sheetBoot,0);
 })();
 
 /* ---------- toast ---------- */
@@ -544,12 +542,12 @@ function render(force){
   if(tab==='tanks')renderTanks(main);else if(tab==='meters')renderMeters(main);else if(tab==='orders')renderOrders(main);else if(tab==='manage')renderManage(main);else if(tab==='credit')renderCredit(main);else renderSummary(main);
 }
 function renderHeader(){
-  const gp=$('#gdPill');if(gp&&typeof gdLabel==='function'){const lb=mode==='drive'?driveLabel():gdLabel();gp.innerHTML=`<span class="gd-dot ${lb.c}"></span><span class="gd-name">Google Drive</span><span class="gd-t">${esc(lb.t)}</span>`;}
+  const gp=$('#gdPill');if(gp&&typeof gdLabel==='function'){const lb=mode==='sheet'?sheetLabel():gdLabel();gp.innerHTML=`<span class="gd-dot ${lb.c}"></span><span class="gd-name">${mode==='sheet'?'Google Sheets':'Google Drive'}</span><span class="gd-t">${esc(lb.t)}</span>`;}
   const st=S.settings.main||{};$('#stName').textContent=st.name||'ปั๊มน้ำมันของฉัน';
   let b='';
   if(hasSample())b=`<div class="banner"><span><strong>ข้อมูลตัวอย่าง</strong> ถัง เลขมิเตอร์ และใบสั่งซื้อที่เห็นอยู่เป็นตัวอย่างเพื่อให้ลองใช้งาน เมื่อพร้อมกรอกข้อมูลจริง ให้กดล้างข้อมูลตัวอย่าง</span><button class="btn small danger" id="clearSample" type="button">ล้างข้อมูลตัวอย่าง</button></div>`;
-  else if(mode==='drive'&&!DV.token)b=`<div class="banner"><span><strong>${DV.state==='signedout'?'เชื่อมต่อ Google Drive เพื่อเริ่มใช้งาน':'กรุณาเชื่อมต่อ Google Drive อีกครั้ง'}</strong> ข้อมูลทั้งหมดเก็บในไฟล์บน Google Drive ของคุณ ใช้ร่วมกันได้ทุกเครื่องที่ลงชื่อด้วยบัญชีเดียวกัน${Object.keys(DV.changes).length?' · มีข้อมูลรอบันทึก '+Object.keys(DV.changes).length+' รายการ':''}</span><button class="btn small primary" id="dvBanner" type="button">เชื่อมต่อ Google Drive</button></div>`;
-  $('#banner').innerHTML=b;if($('#dvBanner'))$('#dvBanner').onclick=()=>driveConnect();
+  else if(mode==='sheet'&&(SH.state==='setup'||(SH.state==='error'&&!SH.rev)))b=`<div class="banner"><span><strong>เชื่อมต่อ Google Sheets เพื่อเริ่มใช้งาน</strong> ข้อมูลทั้งหมดจะบันทึกลง Google Sheet ของคุณ ใช้ร่วมกันได้ทุกเครื่อง${Object.keys(SH.changes).length?' · มีข้อมูลรอบันทึก '+Object.keys(SH.changes).length+' รายการ':''}</span><button class="btn small primary" id="shBanner" type="button">เชื่อมต่อ Google Sheets</button></div>`;
+  $('#banner').innerHTML=b;if($('#shBanner'))$('#shBanner').onclick=()=>openSheetSetup();
   const cs=$('#clearSample');if(cs)armDelete(cs,'ยืนยัน: ล้างตัวอย่างทั้งหมด',async()=>{const keepT=new Set(Object.values(S.nozzles).filter(n=>!n.sample).map(n=>n.tankId));for(const c of COLS)for(const [id,x] of Object.entries(S[c]))if(x&&x.sample&&!(c==='tanks'&&keepT.has(id)))await del(c,id);toast('ล้างข้อมูลตัวอย่างแล้ว');});
 }
 function armDelete(btn,label,fn){let armed=false,t;const orig=btn.textContent;btn.addEventListener('click',()=>{if(!armed){armed=true;btn.textContent=label;btn.classList.add('arm');t=setTimeout(()=>{armed=false;btn.textContent=orig;btn.classList.remove('arm');},3500);}else{clearTimeout(t);fn();}});}
@@ -1044,7 +1042,7 @@ function openGdPanel(refresh){const dlg=$('#dlg'),b=bk(),lb=gdLabel();
   if($('#gdPerm'))$('#gdPerm').onclick=async()=>{try{const p=await window.claude.use('permissions');if(p)await p.manage();}catch(e){toast('เปิดเมนู Permissions ของหน้านี้เพื่อเปิดสิทธิ์ Google Drive');}gdInit();};
   if(!refresh||!dlg.open)dlg.showModal();}
 gdInit();setInterval(()=>{maybeAuto();renderHeader();},30*60*1000);
-$('#gdPill').onclick=()=>mode==='drive'?openDrivePanel():openGdPanel();
+$('#gdPill').onclick=()=>mode==='sheet'?openSheetPanel():openGdPanel();
 render();
 })();
 </script>

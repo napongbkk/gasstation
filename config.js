@@ -1,5 +1,5 @@
-// ตั้งค่าแอปสำหรับเวอร์ชันเว็บ (Vercel)
-// ใส่ Google OAuth Client ID ของคุณแทนค่าด้านล่าง (ดูวิธีสร้างใน README.md)
+// (ไม่บังคับ) ใส่ลิงก์ Web app ของ Google Sheet ไว้ล่วงหน้า เครื่องใหม่จะได้ไม่ต้องวางลิงก์เอง
+// ถ้าเว้นว่าง แอปจะถามลิงก์ตอนเชื่อมต่อครั้งแรก
 window.GSM_CONFIG = {
-  googleClientId: "YOUR_CLIENT_ID.apps.googleusercontent.com"
+  sheetApiUrl: ""
 };
