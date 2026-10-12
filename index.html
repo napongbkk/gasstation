@@ -48,9 +48,9 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;l
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* Header = price sign */
-.sign{background:var(--sign);color:#e9ebef;margin-inline:-16px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+.sign{background:linear-gradient(180deg,#1d7a4f,#17663f);color:#fff;margin-inline:-16px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
 .sign .brand{display:flex;flex-direction:column;min-width:0}
-.sign .eyebrow{font-size:12px;color:#9aa1ad}
+.sign .eyebrow{font-size:12px;color:rgba(255,255,255,.75)}
 .sign h1{font-size:26px;color:#fff}
 .prices{display:flex;flex-wrap:wrap;gap:6px}
 .price{background:#000;border:1px solid #2b3038;border-radius:4px;padding:4px 10px 3px;display:flex;flex-direction:column;align-items:flex-end;min-width:96px}
@@ -58,8 +58,8 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;l
 .price .p-val{font-family:"Barlow Condensed",var(--display);font-size:24px;line-height:1;color:var(--sign-ink);font-weight:600;font-variant-numeric:tabular-nums}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
 .sign-tools{display:flex;gap:8px;align-items:center}
-.btn-sign{background:transparent;border:1px solid #3a404a;color:#d6d9df;border-radius:6px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
-.btn-sign:hover{border-color:#6a717d}
+.btn-sign{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:6px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+.btn-sign:hover{border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.14)}
 
 /* Tabs */
 .tabs{display:flex;gap:2px;margin:18px 0 20px;border-bottom:1px solid var(--line);overflow-x:auto}
@@ -158,22 +158,21 @@ tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0;backgr
 .pump-price{min-width:0}
 .pump-price .v.meter-v{font:700 42px/1 "Barlow Condensed",var(--display);color:var(--ink);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-bottom:2px;border-bottom:3px solid var(--fc);display:inline-block;max-width:100%}
 
-/* Price board (first page): matches the pump cards — light tiles, fuel-coloured accents, price as hero number */
-.pboard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
-.pb-hd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+/* Price board (first page): compact rows — icon, fuel + change, price on the right */
+.pboard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.pb-hd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
 .pb-when{display:flex;flex-direction:column}
-.pb-l{font-size:13px;color:var(--muted)}
-.pb-d{font:700 24px/1.2 var(--display)}
-.pb-act{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.pb-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-.pb-tile{position:relative;border-radius:12px;padding:14px 16px;background:color-mix(in srgb,var(--fc) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--fc) 30%,var(--line));display:flex;flex-direction:column;gap:6px;overflow:hidden}
-.pb-tile::after{content:"";position:absolute;right:-28px;top:-28px;width:96px;height:96px;border-radius:50%;background:color-mix(in srgb,var(--fc) 10%,transparent)}
-.pb-top{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
-.pb-ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;background:var(--fc);flex:none}
-.pb-f{font-weight:700;font-size:17px}
-.pb-v{font:700 48px/1 "Barlow Condensed",var(--display);font-variant-numeric:tabular-nums;position:relative;z-index:1}
-.pb-v small{font:500 14px var(--body);color:var(--muted);margin-left:6px}
-.pb-dl{font-size:12px;font-weight:600;align-self:flex-start;border-radius:999px;padding:1px 9px;position:relative;z-index:1}
+.pb-l{font-size:12px;color:var(--muted)}
+.pb-d{font:700 20px/1.2 var(--display)}
+.pb-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pb-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.pb-tile{display:flex;align-items:center;gap:10px;border-radius:10px;padding:10px 14px;background:color-mix(in srgb,var(--fc) 7%,var(--surface));border:1px solid color-mix(in srgb,var(--fc) 28%,var(--line));border-left:4px solid var(--fc);min-width:0}
+.pb-ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#fff;background:var(--fc);flex:none}
+.pb-mid{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;flex:1}
+.pb-f{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pb-v{font:700 30px/1 "Barlow Condensed",var(--display);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.pb-v small{display:block;font:500 11px var(--body);color:var(--muted);margin-top:2px}
+.pb-dl{font-size:11px;font-weight:600;border-radius:999px;padding:0 8px;white-space:nowrap}
 .pb-dl.up{background:var(--bad-soft);color:var(--bad)}
 .pb-dl.down{background:var(--good-soft);color:var(--good)}
 .pb-dl.flat{background:var(--surface-2);color:var(--muted)}
@@ -227,10 +226,10 @@ tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0;backgr
 /* Google Drive status */
 .gd-pill{display:inline-flex;align-items:center;gap:7px;max-width:100%}
 .gd-pill .gd-name{font-weight:600}
-.gd-pill .gd-t{color:#aab0bb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.gd-pill .gd-t{color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
 @media (max-width:560px){.gd-pill .gd-name{display:none}}
 .gd-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;background:#8b93a0}
-.gd-dot.ok{background:#3fcf8e;box-shadow:0 0 0 3px rgba(63,207,142,.2)}
+.gd-dot.ok{background:#7dffb8;box-shadow:0 0 0 3px rgba(125,255,184,.25)}
 .gd-dot.warn{background:#f0b23a}
 .gd-dot.busy{background:#f0b23a;animation:gdp 1s ease-in-out infinite}
 .gd-dot.bad{background:#ec6b5e}
@@ -638,7 +637,7 @@ function priceBoard(){const td=today(),yd=addDays(td,-1);
   const setToday=inf.every(x=>x.from===td);
   const prev=inf.map(x=>x.from).filter(x=>x&&x<td).sort().pop();
   const d=new Date(td+'T00:00:00');
-  const drop='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/></svg>';
+  const drop='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/></svg>';
   const delta=x=>{if(x.prev==null||!x.prev)return '<span class="pb-dl flat">ยังไม่มีราคาเมื่อวาน</span>';const df=x.p-x.prev;
     if(Math.abs(df)<0.005)return '<span class="pb-dl flat">เท่ากับเมื่อวาน</span>';
     return `<span class="pb-dl ${df>0?'up':'down'}">${df>0?'▲':'▼'} ${Math.abs(df).toFixed(2)} จากเมื่อวาน</span>`;};
@@ -646,8 +645,8 @@ function priceBoard(){const td=today(),yd=addDays(td,-1);
     <div class="pb-hd"><div class="pb-when"><span class="pb-l">ราคาขายประจำวัน</span><span class="pb-d">${DOW[d.getDay()]} ${esc(fdate(td))}</span></div>
       <div class="pb-act">${setToday?'<span class="chip good">✓ บันทึกราคาวันนี้แล้ว</span>':`<span class="chip warn">ยังไม่ได้บันทึกราคาวันนี้${prev?' · ใช้ราคาของ '+esc(fdateShort(prev)):''}</span>`}
       <button class="btn ${setToday?'':'primary'}" id="pbEdit" type="button">${setToday?'แก้ไขราคาขาย':'บันทึกราคาขายวันนี้'}</button></div></div>
-    <div class="pb-tiles">${inf.map(x=>`<div class="pb-tile" style="--fc:${color(x.c)}"><div class="pb-top"><span class="pb-ic">${drop}</span><span class="pb-f">${esc(x.f)}</span></div>
-      <div class="pb-v">${x.p.toFixed(2)}<small>${esc(cur())}/ลิตร</small></div>${delta(x)}</div>`).join('')}</div>
+    <div class="pb-tiles">${inf.map(x=>`<div class="pb-tile" style="--fc:${color(x.c)}"><span class="pb-ic">${drop}</span><div class="pb-mid"><span class="pb-f">${esc(x.f)}</span>${delta(x)}</div>
+      <div class="pb-v">${x.p.toFixed(2)}<small>${esc(cur())}/ลิตร</small></div></div>`).join('')}</div>
   </section>`;}
 function renderTanks(main){
   const tanks=tanksSorted();
