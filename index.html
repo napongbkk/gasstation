@@ -62,7 +62,7 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;l
 .btn-sign:hover{border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.14)}
 
 /* Tabs */
-.tabs{display:flex;gap:2px;margin:18px 0 20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs{display:flex;gap:2px;margin:12px 0 14px;border-bottom:1px solid var(--line);overflow-x:auto}
 .tab{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px 9px;font:600 15px var(--body);color:var(--muted);cursor:pointer;white-space:nowrap}
 .tab .k{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:6px;opacity:.7}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
@@ -241,6 +241,57 @@ tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0;backgr
 .gd-dl dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .gd-dl a{color:var(--accent-ink)}
 .gd-auto{display:flex;align-items:center;gap:8px;font-size:14px;padding:10px 12px;background:var(--surface-2);border-radius:8px;flex-wrap:wrap}
+
+/* First page: compact so the whole dashboard fits one desktop screen */
+.home .sec-head{margin:14px 0 8px;align-items:center}
+.home .sec-head h2{font-size:19px}
+.home .sec-head p{display:none}
+.home .pboard{padding:12px 14px;gap:10px}
+@media (min-width:900px) and (max-width:1149px){.home .pboard{flex-direction:row;align-items:center;gap:16px}.home .pb-hd{flex-direction:column;align-items:flex-start;flex:none;width:250px;gap:6px}.home .pb-tiles{flex:1}}
+@media (min-width:1150px){
+  .home{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+  .home .pboard{position:sticky;top:12px}
+  .home .pb-hd{flex-direction:column;align-items:stretch;gap:8px}
+  .home .pb-act{flex-direction:column;align-items:stretch}
+  .home .pb-act .btn{width:100%}
+  .home .pb-tiles{grid-template-columns:1fr}
+  .home .sec-head.first{margin-top:0}
+}
+.home .pb-act .chip{white-space:normal;line-height:1.4;padding:2px 9px}
+.home .sec-head .btn{padding:3px 12px;font-size:13px}
+.home .pb-tile{padding:8px 12px}
+.home .pb-v{font-size:26px}
+.home .tank-grid,.home .pump-grid{gap:10px}
+.home .pump-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.home .pb-f{white-space:normal}
+.wrap{padding-block:0 24px}
+.home .tank-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.home .tank{grid-template-columns:minmax(0,1fr);padding:12px 14px;gap:8px}
+.home .tank-top h3{font-size:18px}
+.home .tank-top .sub{font-size:11px}
+.home .gauge{height:12px;border-width:1px;border-radius:6px}
+.home .gauge .fill{height:100%!important;width:var(--p);top:0;border-radius:5px 0 0 5px}
+.home .gauge .low-line{top:0;bottom:0!important;left:var(--lw);right:auto;border-top:0;border-left:2px dashed var(--bad)}
+.home .gauge .pct{display:none}
+.home .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 10px}
+.home .stat .l{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home .stat .v{font-size:17px;white-space:nowrap}
+.home .stat .v small{font-size:11px}
+.home .stat.profit{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:3px 10px;margin-top:4px}
+.home .stat.profit .v{font-size:19px}
+.home .pump{padding:12px 14px;gap:6px 12px}
+.home .pump-name{font-size:16px;gap:8px}
+.home .pump-name .ic{width:30px;height:30px;border-radius:8px}
+.home .pump-name .ic svg{width:17px;height:17px}
+.home .pump-price .l{font-size:11px}
+.home .pump-price .v.meter-v{font-size:32px;border-bottom-width:2px}
+.home .ring{min-width:56px}
+.home .ring svg{width:54px;height:54px}
+.home .ring .rt{font-size:10px}
+.home .pump-stats>div{padding:3px 10px}
+.home .pump-stats .l{font-size:12px}
+.home .pump-stats .v{font-size:17px}
+.home .pump-ft{display:none}
 
 /* Arrange mode */
 .arr-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border:1px dashed var(--accent);border-radius:8px;padding:4px 6px;font-size:12px;color:var(--accent-ink)}
@@ -617,15 +668,15 @@ function tankCards(tanks){return '<div class="tank-grid">'+tanks.map(([id,t],ti)
     if(lvl<0)chip='<span class="chip bad">ติดลบ · ตรวจสอบเลขมิเตอร์</span>';else if(lvl>cap)chip='<span class="chip bad">เกินความจุ</span>';else if(pct<=low)chip='<span class="chip warn">ต่ำ · ควรสั่งเพิ่ม</span>';
     const ac=avgCost(id,'9999-12-31');
     return `<article class="panel tank${arr.tanks?' arranging':''}" data-oid="${id}" data-col="tanks"${arr.tanks?' draggable="true"':''}>${arr.tanks?arrBar('tanks',id,ti,tanks.length):''}
-      <div class="tank-top"><div><div class="sub">${esc(t.name)}</div><h3><span class="fuel"><i class="dot" style="background:${color(t.color)};width:12px;height:12px"></i>${esc(t.fuel)}</span></h3></div>${chip}</div>
-      <div class="gauge" role="img" aria-label="เต็ม ${Math.round(pct)}%"><div class="fill" style="height:${pct}%;background:${color(t.color)}"></div><div class="low-line" style="bottom:${low}%"></div><div class="pct">${Math.round(pct)}%</div></div>
+      <div class="tank-top"><div><div class="sub">${esc(t.name)} · เต็ม ${Math.round(pct)}%</div><h3><span class="fuel"><i class="dot" style="background:${color(t.color)};width:12px;height:12px"></i>${esc(t.fuel)}</span></h3></div>${chip}</div>
+      <div class="gauge" role="img" aria-label="เต็ม ${Math.round(pct)}%"><div class="fill" style="height:${pct}%;--p:${pct}%;background:${color(t.color)}"></div><div class="low-line" style="bottom:${low}%;--lw:${low}%"></div><div class="pct">${Math.round(pct)}%</div></div>
       <div class="stats">
-        <div class="stat"><div class="l">สต็อกตามบัญชี</div><div class="v">${L(lvl)} <small>ลิตร</small></div></div>
+        <div class="stat"><div class="l">สต็อก</div><div class="v">${L(lvl)} <small>ลิตร</small></div></div>
         <div class="stat"><div class="l">ความจุ</div><div class="v">${L(cap)} <small>ลิตร</small></div></div>
-        <div class="stat"><div class="l">ที่ว่างในถัง</div><div class="v">${L(Math.max(0,cap-lvl))} <small>ลิตร</small></div></div>
-        <div class="stat"><div class="l">พอขายได้อีก</div><div class="v">${cover==null?'–':cover.toFixed(1)} <small>${cover==null?'':'วัน'}</small></div></div>
-        <div class="stat"><div class="l">ราคาขายวันนี้ / ลิตร</div><div class="v">${priceOf(t.fuel).toFixed(2)}</div></div>
-        <div class="stat"><div class="l">ต้นทุนเฉลี่ย / ลิตร</div><div class="v">${ac?ac.toFixed(2):'–'}</div></div>
+        <div class="stat"><div class="l">ที่ว่าง</div><div class="v">${L(Math.max(0,cap-lvl))} <small>ลิตร</small></div></div>
+        <div class="stat"><div class="l">พอขายอีก</div><div class="v">${cover==null?'–':cover.toFixed(1)} <small>${cover==null?'':'วัน'}</small></div></div>
+        <div class="stat"><div class="l">ขาย / ลิตร</div><div class="v">${priceOf(t.fuel).toFixed(2)}</div></div>
+        <div class="stat"><div class="l">ต้นทุน / ลิตร</div><div class="v">${ac?ac.toFixed(2):'–'}</div></div>
         ${(()=>{if(!ac)return `<div class="stat profit"><div class="l">กำไรต่อลิตร</div><div class="v">– <small>ยังไม่มีข้อมูลต้นทุน</small></div></div>`;const sp=priceOf(t.fuel),pl=sp-ac,pm=sp?pl/sp*100:0;
           return `<div class="stat profit${pl<0?' neg':''}"><div class="l">กำไรต่อลิตร</div><div class="v">${pl.toFixed(2)} <small>${esc(cur())}/ลิตร · ${pm.toFixed(1)}%</small></div></div>`;})()}
       </div>
@@ -650,11 +701,11 @@ function priceBoard(){const td=today(),yd=addDays(td,-1);
   </section>`;}
 function renderTanks(main){
   const tanks=tanksSorted();
-  let h=priceBoard()+`<div class="sec-head" style="margin-top:24px"><div><h2>ถังน้ำมัน</h2><p>สต็อกตามบัญชี = สต็อกตั้งต้น + น้ำมันที่รับเข้า − ลิตรที่ขายตามเลขมิเตอร์ · กำไรต่อลิตร = ราคาขาย − ต้นทุนเฉลี่ย</p></div>${tanks.length>1?`<button class="btn${arr.tanks?' primary':''}" data-arr="tanks" type="button">${arr.tanks?'เสร็จสิ้น':'จัดเรียง'}</button>`:''}</div>`;
+  let h='<div class="home">'+priceBoard()+`<div class="home-main"><div class="sec-head first"><div><h2 title="สต็อกตามบัญชี = สต็อกตั้งต้น + น้ำมันที่รับเข้า − ลิตรที่ขาย · กำไรต่อลิตร = ราคาขาย − ต้นทุนเฉลี่ย">ถังน้ำมัน</h2><p>สต็อกตามบัญชี = สต็อกตั้งต้น + น้ำมันที่รับเข้า − ลิตรที่ขายตามเลขมิเตอร์ · กำไรต่อลิตร = ราคาขาย − ต้นทุนเฉลี่ย</p></div>${tanks.length>1?`<button class="btn${arr.tanks?' primary':''}" data-arr="tanks" type="button">${arr.tanks?'เสร็จสิ้น':'จัดเรียง'}</button>`:''}</div>`;
   if(!tanks.length)h+=`<div class="panel empty"><strong>ยังไม่มีถังน้ำมัน</strong>เพิ่มถังน้ำมันได้ที่เมนู "ตั้งค่าถังและหัวจ่าย"</div>`;
   else h+=tankCards(tanks);
   const noz=nozzlesSorted();
-  h+=`<div class="sec-head" style="margin-top:28px"><div><h2>หัวจ่าย</h2><p>สถานะหัวจ่ายแต่ละหัว เลขมิเตอร์ล่าสุด และยอดขายล่าสุด</p></div>${noz.length>1?`<button class="btn${arr.nozzles?' primary':''}" data-arr="nozzles" type="button">${arr.nozzles?'เสร็จสิ้น':'จัดเรียง'}</button>`:''}</div>`;
+  h+=`<div class="sec-head"><div><h2>หัวจ่าย</h2><p>สถานะหัวจ่ายแต่ละหัว เลขมิเตอร์ล่าสุด และยอดขายล่าสุด</p></div>${noz.length>1?`<button class="btn${arr.nozzles?' primary':''}" data-arr="nozzles" type="button">${arr.nozzles?'เสร็จสิ้น':'จัดเรียง'}</button>`:''}</div>`;
   if(!noz.length)h+=`<div class="panel empty"><strong>ยังไม่มีหัวจ่าย</strong>เพิ่มหัวจ่ายได้ที่เมนู "ตั้งค่าถังและหัวจ่าย"</div>`;
   else{const ico='<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="11" height="18" rx="1.5"/><rect x="5.5" y="6" width="6" height="4" rx=".5"/><path d="M14 9h2.5a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>';
     const ring=(pct,txt)=>{const r=27,c=2*Math.PI*r,off=c*(1-pct/100);return `<svg width="68" height="68" viewBox="0 0 68 68" role="img" aria-label="ระดับถัง ${Math.round(pct)}%"><circle cx="34" cy="34" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="7"/><circle cx="34" cy="34" r="${r}" fill="none" stroke="var(--fc)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 34 34)"/><text x="34" y="38" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="Barlow Condensed,sans-serif">${txt}</text></svg>`;};
@@ -667,6 +718,7 @@ function renderTanks(main){
       <div class="pump-stats one"><div><div class="l">ขายล่าสุด${lr?' ('+esc(fdate(lr.date))+')':''}</div><div class="v">${lr?nL(lr.litres)+'<small>ลิตร</small>':'–'}</div></div></div>
       <div class="pump-ft${lr?'':' none'}"><i class="dot"></i>${lr?'บันทึกล่าสุด '+esc(fdate(lr.date)):(t?'ยังไม่มีการบันทึก · แสดงมิเตอร์เริ่มต้น':'ผูกถังได้ที่เมนู 6 ตั้งค่าถังและหัวจ่าย')}</div>
     </article>`;}).join('')+'</div>';}
+  h+='</div></div>';
   main.innerHTML=h;
   $('#pbEdit').onclick=()=>pinGate('ราคาขายประจำวัน','บันทึก/แก้ไขราคาขาย',()=>priceForm(today()));
   const listIds=col=>(col==='tanks'?tanksSorted():nozzlesSorted()).map(x=>x[0]);
