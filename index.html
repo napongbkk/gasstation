@@ -305,6 +305,15 @@ tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0;backgr
 main#main{margin-top:14px}
 @media (max-width:640px){.sign .brand-logo{height:32px}.sign{grid-template-columns:1fr}.sign-tools{justify-content:flex-start}.tab{flex:0 0 auto}.sign h1{font-size:19px}}
 
+#cfm{width:min(440px,calc(100vw - 32px))}
+#cfm form{padding:22px 22px 18px}
+#cfm h2{font-size:21px}
+.cfm-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;margin-bottom:10px;background:var(--accent-soft);color:var(--accent-ink)}
+.cfm-ic.bad{background:var(--bad-soft);color:var(--bad)}
+.cfm-rows{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:4px 0 6px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;font-size:13px}
+.cfm-rows dt{color:var(--muted);white-space:nowrap}
+.cfm-rows dd{margin:0;font-weight:600;min-width:0;overflow-wrap:anywhere}
+
 /* Arrange mode */
 .arr-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border:1px dashed var(--accent);border-radius:8px;padding:4px 6px;font-size:12px;color:var(--accent-ink)}
 .arr-bar .btn{padding:2px 12px}
@@ -406,6 +415,7 @@ dialog .note{color:var(--muted);margin:0 0 12px;font-size:13px}
   <main id="main"><div class="loading">กำลังโหลดข้อมูล…</div></main>
 </div>
 <dialog id="dlg" lang="th"></dialog>
+<dialog id="cfm" lang="th"></dialog>
 <div class="toast" id="toast" hidden></div>
 <script src="config.js"></script>
 <script>
@@ -625,16 +635,26 @@ function openForm({title,note,fields,values={},submitLabel='บันทึก',
   $('#dlgForm').onsubmit=e=>{e.preventDefault();const fd=new FormData(e.target);const out={};
     for(const f of fields){let v=fd.get(f.key);if(f.type==='number')v=(v===''||v==null)?null:+v;else v=(v||'').trim();
       if(f.required&&(v===null||v===''||(typeof v==='number'&&isNaN(v)))){$('#formErr').textContent='กรุณากรอก '+f.label;return;}out[f.key]=v;}
-    const err=onSubmit(out);if(err){$('#formErr').textContent=err;return;}dlg.close();};
+    const rows=fields.filter(f=>out[f.key]!==null&&out[f.key]!==''&&out[f.key]!==undefined).slice(0,9).map(f=>{let v=out[f.key];
+      if(f.type==='select'){const o=f.options.find(o=>String(o[0])===String(v));v=o?o[1]:v;}else if(f.type==='date')v=fdate(v);else if(f.type==='number')v=(+v).toLocaleString('en-US',{maximumFractionDigits:4});
+      return [f.label.replace(/\s*\(.*\)$/,''),String(v)];});
+    confirmBox({title:'ยืนยัน: '+title,msg:'ตรวจสอบข้อมูลให้ถูกต้อง แล้วกดยืนยันเพื่อบันทึก',rows,ok:'ยืนยันบันทึก',fn:()=>{const err=onSubmit(out);if(err){$('#formErr').textContent=err;return;}dlg.close();}});};
   dlg.showModal();
 }
-function pinGate(title,action,fn){/* no password: run at once; deleting or replacing everything still asks for one confirming click */
-  const risky=action==='ลบ'||/แทนที่/.test(action);if(!risky){fn();return;}
-  const dlg=$('#dlg');
-  dlg.innerHTML=`<form id="pinForm" novalidate><h2>${esc(title)}</h2><p class="note">${action==='ลบ'?'การลบไม่สามารถย้อนกลับได้':'ข้อมูลเดิมทั้งหมดจะถูกแทนที่ด้วยข้อมูลจากไฟล์'}</p><div class="dlg-actions"><button type="button" class="btn ghost" id="dlgCancel">ยกเลิก</button><button type="submit" class="btn danger-solid">${action==='ลบ'?'ยืนยันการลบ':'ยืนยัน'}</button></div></form>`;
-  $('#dlgCancel').onclick=()=>dlg.close();
-  $('#pinForm').onsubmit=e=>{e.preventDefault();dlg.close();fn();};
-  dlg.showModal();
+/* Second confirmation for every save, edit and delete */
+function confirmBox({title,msg,rows,ok,danger,fn}){const c=$('#cfm');
+  c.innerHTML=`<form id="cfmForm" novalidate><div class="cfm-ic ${danger?'bad':''}" aria-hidden="true">${danger?'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13"/></svg>':'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>'}</div>
+    <h2>${esc(title)}</h2>${msg?`<p class="note">${esc(msg)}</p>`:''}
+    ${rows&&rows.length?`<dl class="cfm-rows">${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`:''}
+    <div class="dlg-actions"><button type="button" class="btn ghost" id="cfmNo">${danger?'ยกเลิก':'กลับไปแก้ไข'}</button><button type="submit" class="btn ${danger?'danger-solid':'primary'}" id="cfmYes">${esc(ok||'ยืนยัน')}</button></div></form>`;
+  $('#cfmNo').onclick=()=>c.close();
+  $('#cfmForm').onsubmit=e=>{e.preventDefault();c.close();fn();};
+  c.showModal();setTimeout(()=>{const y=$('#cfmYes');if(y)y.focus();},0);}
+function pinGate(title,action,fn){/* opening a form needs no confirmation; saving, deleting and replacing do */
+  if(action==='ลบ')return confirmBox({title,msg:'การลบไม่สามารถย้อนกลับได้',ok:'ยืนยันการลบ',danger:true,fn});
+  if(/แทนที่/.test(action))return confirmBox({title,msg:'ข้อมูลเดิมทั้งหมดจะถูกแทนที่ด้วยข้อมูลจากไฟล์',ok:'ยืนยันแทนที่ข้อมูล',danger:true,fn});
+  if(action==='บันทึก')return confirmBox({title,msg:'ตรวจสอบข้อมูลให้ถูกต้อง แล้วกดยืนยันเพื่อบันทึก',ok:'ยืนยันบันทึก',fn});
+  fn();
 }
 $('#btnSettings').onclick=()=>{const st=S.settings.main||{};openForm({title:'ตั้งค่าสถานี',fields:[{key:'name',label:'ชื่อสถานี',full:true,required:true,default:'ปั๊มน้ำมันของฉัน'},{key:'currency',label:'สัญลักษณ์สกุลเงิน',default:'฿',required:true}],values:st,onSubmit:v=>{put('settings','main',{...v});}});};
 
@@ -941,7 +961,7 @@ function renderOrders(main){
   main.querySelectorAll('[data-odel]').forEach(b=>armDelete(b,'ยืนยันการลบ',()=>del('orders',b.dataset.odel)));
   main.querySelectorAll('[data-recv]').forEach(b=>b.onclick=()=>{const o=S.orders[b.dataset.recv];const t=S.tanks[o.tankId];
     if(t&&tankLevel(o.tankId)+(+o.litres||0)>(+t.capacity||0))toast('โปรดตรวจสอบ: ปริมาณที่รับมากกว่าที่ว่างในถัง');
-    put('orders',b.dataset.recv,{...o,status:'received',deliveryDate:delivDate(o)>today()?today():delivDate(o)});});
+    confirmBox({title:'ยืนยันรับน้ำมันเข้าถัง',msg:'น้ำมันจะถูกเพิ่มเข้าสต็อกของถังทันที',rows:[['ถัง',(t?t.name+' · '+t.fuel:'–')],['จำนวน',L(o.litres)+' ลิตร'],['ต้นทุน / ลิตร',(+o.costPerLitre||0).toFixed(2)]],ok:'ยืนยันรับน้ำมัน',fn:()=>put('orders',b.dataset.recv,{...o,status:'received',deliveryDate:delivDate(o)>today()?today():delivDate(o)})});});
 }
 
 /* ---------- 4. summary ---------- */
