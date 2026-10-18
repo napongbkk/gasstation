@@ -48,25 +48,13 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;l
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* Header = price sign */
-.sign{background:linear-gradient(180deg,#1d7a4f,#17663f);color:#fff;margin-inline:-16px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
-.sign .brand{display:flex;flex-direction:column;min-width:0}
-.sign .eyebrow{font-size:12px;color:rgba(255,255,255,.75)}
-.sign h1{font-size:26px;color:#fff}
 .prices{display:flex;flex-wrap:wrap;gap:6px}
 .price{background:#000;border:1px solid #2b3038;border-radius:4px;padding:4px 10px 3px;display:flex;flex-direction:column;align-items:flex-end;min-width:96px}
 .price .p-name{font-size:11px;color:#aab0bb;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .price .p-val{font-family:"Barlow Condensed",var(--display);font-size:24px;line-height:1;color:var(--sign-ink);font-weight:600;font-variant-numeric:tabular-nums}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
-.sign-tools{display:flex;gap:8px;align-items:center}
-.btn-sign{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:6px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
-.btn-sign:hover{border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.14)}
 
 /* Tabs */
-.tabs{display:flex;gap:2px;margin:12px 0 14px;border-bottom:1px solid var(--line);overflow-x:auto}
-.tab{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px 9px;font:600 15px var(--body);color:var(--muted);cursor:pointer;white-space:nowrap}
-.tab .k{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:6px;opacity:.7}
-.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
-.tab:hover{color:var(--ink)}
 
 /* Common */
 .sec-head{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:space-between;margin:6px 0 12px}
@@ -82,7 +70,7 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;l
 .btn.danger-solid{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:600}
 .pin-in{font-family:var(--mono);font-size:20px!important;letter-spacing:.4em;text-align:center}
 .btn.danger.arm{background:var(--bad);color:#fff;border-color:var(--bad)}
-.btn:focus-visible,.tab:focus-visible,input:focus-visible,select:focus-visible,.btn-sign:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,.btn-sign:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px}
 .chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border-radius:999px;padding:1px 9px;white-space:nowrap}
 .chip.good{background:var(--good-soft);color:var(--good)}
@@ -293,6 +281,27 @@ tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0;backgr
 .home .pump-stats .v{font-size:17px}
 .home .pump-ft{display:none}
 
+/* Top bar: one green block — brand + status on the first row, menu pills on the second */
+.sign{background:linear-gradient(180deg,#1d7a4f,#17663f);color:#fff;margin-inline:-16px;padding:12px 16px 10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:center;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.sign .brand{display:flex;align-items:center;gap:12px;min-width:0}
+.sign .logo{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);display:grid;place-items:center;flex:none;color:#fff}
+.sign .brand-t{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.sign .eyebrow{font-size:12px;color:rgba(255,255,255,.75)}
+.sign h1{font-size:21px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.sign-tools{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.btn-sign{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.24);color:#fff;border-radius:10px;padding:0 12px;height:38px;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-sign:hover{border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.16)}
+.tabs{grid-column:1/-1;display:flex;gap:4px;margin:0;padding:4px;border:0;border-radius:12px;background:rgba(0,0,0,.16);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{display:inline-flex;align-items:center;gap:7px;background:none;border:0;border-radius:9px;padding:7px 12px;font:600 14px var(--body);color:rgba(255,255,255,.82);cursor:pointer;white-space:nowrap;flex:1 0 auto;justify-content:center}
+.tab svg{flex:none;opacity:.9}
+.tab:hover{background:rgba(255,255,255,.1);color:#fff}
+.tab[aria-selected="true"]{background:#fff;color:#17663f;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.tab:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#banner:not(:empty){margin-bottom:4px}
+main#main{margin-top:14px}
+@media (max-width:640px){.sign{grid-template-columns:1fr}.sign-tools{justify-content:flex-start}.tab{flex:0 0 auto}.sign h1{font-size:19px}}
+
 /* Arrange mode */
 .arr-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border:1px dashed var(--accent);border-radius:8px;padding:4px 6px;font-size:12px;color:var(--accent-ink)}
 .arr-bar .btn{padding:2px 12px}
@@ -379,18 +388,18 @@ dialog .note{color:var(--muted);margin:0 0 12px;font-size:13px}
 <body>
 <div class="wrap" lang="th">
   <header class="sign">
-    <div class="brand"><span class="eyebrow">ระบบจัดการปั๊มน้ำมัน</span><h1 id="stName">ปั๊มน้ำมัน</h1></div>
-    <div class="sign-tools"><button class="btn-sign gd-pill" id="gdPill" type="button" aria-label="สถานะการเชื่อมต่อข้อมูล"></button><button class="btn-sign" id="btnSettings" type="button">ตั้งค่าสถานี</button></div>
+    <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h11v18H3z M5.5 6h6v4h-6z M14 9h2.5a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg></span><div class="brand-t"><span class="eyebrow">ระบบจัดการปั๊มน้ำมัน</span><h1 id="stName">ปั๊มน้ำมัน</h1></div></div>
+    <div class="sign-tools"><button class="btn-sign gd-pill" id="gdPill" type="button" aria-label="สถานะการเชื่อมต่อข้อมูล"></button><button class="btn-sign" id="btnSettings" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M4 12h2 M18 12h2 M12 4v2 M12 18v2 M6.3 6.3l1.4 1.4 M16.3 16.3l1.4 1.4 M6.3 17.7l1.4-1.4 M16.3 7.7l1.4-1.4"/></svg><span>ตั้งค่าสถานี</span></button></div>
+    <nav class="tabs" role="tablist" id="tabs" aria-label="เมนูหลัก">
+    <button class="tab" role="tab" data-tab="tanks" id="tab-tanks"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3v12c0 1.7-3.6 3-8 3s-8-1.3-8-3z M4 6c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg><span>ภาพรวม / ถังน้ำมัน</span></button>
+    <button class="tab" role="tab" data-tab="meters" id="tab-meters"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 1 9-9 M12 12l4-4"/></svg><span>บันทึกเลขมิเตอร์</span></button>
+    <button class="tab" role="tab" data-tab="orders" id="tab-orders"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3z M14 10h4l3 3v3h-7 M7 19a2 2 0 1 0 0-.01 M17 19a2 2 0 1 0 0-.01"/></svg><span>สั่งซื้อน้ำมัน</span></button>
+    <button class="tab" role="tab" data-tab="credit" id="tab-credit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18v12H3z M3 10h18 M7 15h4"/></svg><span>สินเชื่อน้ำมัน</span></button>
+    <button class="tab" role="tab" data-tab="summary" id="tab-summary"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10 M10 20V4 M16 20v-8 M22 20H2"/></svg><span>สรุปยอดขายและกำไร</span></button>
+    <button class="tab" role="tab" data-tab="manage" id="tab-manage"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M4 12h2 M18 12h2 M12 4v2 M12 18v2 M6.3 6.3l1.4 1.4 M16.3 16.3l1.4 1.4 M6.3 17.7l1.4-1.4 M16.3 7.7l1.4-1.4"/></svg><span>ตั้งค่าถังและหัวจ่าย</span></button>
+    </nav>
   </header>
   <div id="banner"></div>
-  <nav class="tabs" role="tablist" id="tabs">
-    <button class="tab" role="tab" data-tab="tanks" id="tab-tanks"><span class="k">1</span>ถังน้ำมัน</button>
-    <button class="tab" role="tab" data-tab="meters" id="tab-meters"><span class="k">2</span>บันทึกเลขมิเตอร์</button>
-    <button class="tab" role="tab" data-tab="orders" id="tab-orders"><span class="k">3</span>สั่งซื้อน้ำมัน</button>
-    <button class="tab" role="tab" data-tab="credit" id="tab-credit"><span class="k">4</span>สินเชื่อน้ำมัน</button>
-    <button class="tab" role="tab" data-tab="summary" id="tab-summary"><span class="k">5</span>สรุปยอดขายและกำไร</button>
-    <button class="tab" role="tab" data-tab="manage" id="tab-manage"><span class="k">6</span>ตั้งค่าถังและหัวจ่าย</button>
-  </nav>
   <main id="main"><div class="loading">กำลังโหลดข้อมูล…</div></main>
 </div>
 <dialog id="dlg" lang="th"></dialog>
