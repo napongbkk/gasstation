@@ -626,14 +626,13 @@ function openForm({title,note,fields,values={},submitLabel='บันทึก',
     const err=onSubmit(out);if(err){$('#formErr').textContent=err;return;}dlg.close();};
   dlg.showModal();
 }
-const PIN='1234';
-function pinGate(title,action,fn){const dlg=$('#dlg');const danger=action==='ลบ';
-  dlg.innerHTML=`<form id="pinForm" novalidate><h2>${esc(title)}</h2><p class="note">${danger?'การลบไม่สามารถย้อนกลับได้ ':''}กรุณากรอกรหัสผ่านเพื่อยืนยันการ${esc(action)}</p><div class="fgrid"><label class="full" for="f_pin">รหัสผ่าน<input id="f_pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" class="pin-in"></label></div><p class="form-err" id="formErr"></p><div class="dlg-actions"><button type="button" class="btn ghost" id="dlgCancel">ยกเลิก</button><button type="submit" class="btn ${danger?'danger-solid':'primary'}">${danger?'ยืนยันการลบ':'ยืนยัน'}</button></div></form>`;
+function pinGate(title,action,fn){/* no password: run at once; deleting or replacing everything still asks for one confirming click */
+  const risky=action==='ลบ'||/แทนที่/.test(action);if(!risky){fn();return;}
+  const dlg=$('#dlg');
+  dlg.innerHTML=`<form id="pinForm" novalidate><h2>${esc(title)}</h2><p class="note">${action==='ลบ'?'การลบไม่สามารถย้อนกลับได้':'ข้อมูลเดิมทั้งหมดจะถูกแทนที่ด้วยข้อมูลจากไฟล์'}</p><div class="dlg-actions"><button type="button" class="btn ghost" id="dlgCancel">ยกเลิก</button><button type="submit" class="btn danger-solid">${action==='ลบ'?'ยืนยันการลบ':'ยืนยัน'}</button></div></form>`;
   $('#dlgCancel').onclick=()=>dlg.close();
-  $('#pinForm').onsubmit=e=>{e.preventDefault();const inp=$('#f_pin');
-    if(inp.value!==PIN){$('#formErr').textContent='รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';inp.value='';inp.focus();return;}
-    dlg.close();fn();};
-  dlg.showModal();setTimeout(()=>{const i=$('#f_pin');if(i)i.focus();},0);
+  $('#pinForm').onsubmit=e=>{e.preventDefault();dlg.close();fn();};
+  dlg.showModal();
 }
 $('#btnSettings').onclick=()=>{const st=S.settings.main||{};openForm({title:'ตั้งค่าสถานี',fields:[{key:'name',label:'ชื่อสถานี',full:true,required:true,default:'ปั๊มน้ำมันของฉัน'},{key:'currency',label:'สัญลักษณ์สกุลเงิน',default:'฿',required:true}],values:st,onSubmit:v=>{put('settings','main',{...v});}});};
 
@@ -823,7 +822,7 @@ function renderCredit(main){
 function bindCredit(main){$('#cAdd').onclick=()=>custForm();$('#cSale').onclick=()=>saleForm(selCust);$('#cPay').onclick=()=>payForm(selCust);}
 function renderManage(main){
   const tanks=tanksSorted(),noz=nozzlesSorted();
-  let h=`<div class="sec-head"><div><h2>ตั้งค่าถังน้ำมัน</h2><p>เพิ่ม แก้ไข ลบ และวัดน้ำมันในถัง ทุกรายการต้องใส่รหัสผ่านเพื่อยืนยัน</p></div><button class="btn primary" id="addTank" type="button">เพิ่มถังน้ำมัน</button></div>`;
+  let h=`<div class="sec-head"><div><h2>ตั้งค่าถังน้ำมัน</h2><p>เพิ่ม แก้ไข ลบ และวัดน้ำมันในถัง</p></div><button class="btn primary" id="addTank" type="button">เพิ่มถังน้ำมัน</button></div>`;
   if(!tanks.length)h+=`<div class="panel empty"><strong>ยังไม่มีถังน้ำมัน</strong>เพิ่มถังน้ำมันใต้ดินถังแรก พร้อมความจุ ชนิดน้ำมัน และราคาขาย</div>`;
   else h+=`<div class="panel tbl-wrap"><table><thead><tr><th>ถัง</th><th>ชนิดน้ำมัน</th><th class="r">ความจุ</th><th class="r">สต็อกตามบัญชี</th><th class="r">เตือนต่ำ</th><th>สต็อกตั้งต้น</th><th></th></tr></thead><tbody>${tanks.map(([id,t])=>`<tr><td><strong>${esc(t.name)}</strong></td><td><span class="fuel"><i class="dot" style="background:${color(t.color)}"></i>${esc(t.fuel)}</span></td><td class="r mono">${L(t.capacity)}</td><td class="r mono">${L(tankLevel(id))}</td><td class="r mono">${+(t.lowPct??20)}%</td><td class="muted">${L(t.baseLevel)} ลิตร · ${esc(fdate(t.baseDate))}</td><td><div class="row-actions"><button class="btn small" data-dip="${id}" type="button">วัดน้ำมันในถัง</button><button class="btn small" data-edit="${id}" type="button">แก้ไข</button><button class="btn small danger" data-del="${id}" type="button">ลบ</button></div></td></tr>`).join('')}</tbody></table></div>`;
   h+=`<div class="sec-head" style="margin-top:28px"><div><h2>ตั้งค่าหัวจ่ายและมิเตอร์</h2><p>หัวจ่ายแต่ละหัวมีมิเตอร์สะสม ลิตรที่ขายต่อวัน = เลขปิด − เลขเปิด</p></div><button class="btn primary" id="addNoz" type="button">เพิ่มหัวจ่าย</button></div>`;
